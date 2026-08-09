@@ -117,10 +117,24 @@ export function isSport(p) {
   return RAW_DEPORTES.has(raw) || cat.includes('deporte');
 }
 
-/** Películas o deportes de un día, ordenados por inicio. */
-export function filteredBy(kind, programs, dayKey) {
+/** Películas o deportes dentro de una ventana [startMs, endMs), por inicio. */
+export function filteredBy(kind, programs, startMs, endMs) {
   const fn = kind === 'movie' ? isMovie : isSport;
+  const s = Date.parse;
   return programs
-    .filter((p) => programDayKey(p) === dayKey && fn(p))
+    .filter((p) => {
+      const t = s(p.start);
+      return t >= startMs && t < endMs && fn(p);
+    })
+    .sort(byStart);
+}
+
+/** Programas cuyo inicio cae en [startMs, endMs), ordenados. */
+export function programsInWindow(programs, startMs, endMs) {
+  return programs
+    .filter((p) => {
+      const t = Date.parse(p.start);
+      return t >= startMs && t < endMs;
+    })
     .sort(byStart);
 }

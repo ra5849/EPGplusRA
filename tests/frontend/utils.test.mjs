@@ -1,6 +1,6 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalize, tokenize, pad2, clamp, fmtDur, fmtTime, relTime } from '../../js/utils.js';
+import { normalize, tokenize, pad2, clamp, fmtDur, fmtTime, relTime, tzOffsetMs, madridMidnightMs, madridDayKey } from '../../js/utils.js';
 
 test('normalize quita acentos y pasa a minúsculas', () => {
   assert.equal(normalize('Película de Acción'), 'pelicula de accion');
@@ -34,4 +34,21 @@ test('relTime funcionamiento básico', () => {
   const now = Date.parse('2026-08-08T12:00:00+00:00');
   assert.match(relTime(now - 5 * 60_000, now), /hace/);
   assert.match(relTime(now + 15 * 60_000, now), /en/);
+});
+
+test('zona horaria España: offsets de verano e invierno', () => {
+  assert.equal(tzOffsetMs('Europe/Madrid', Date.parse('2026-08-08T12:00:00Z')), 2 * 3600_000);
+  assert.equal(tzOffsetMs('Europe/Madrid', Date.parse('2026-01-15T12:00:00Z')), 3600_000);
+});
+
+test('madridMidnightMs: medianoche civil en verano es 22:00Z del día anterior', () => {
+  assert.equal(madridMidnightMs('2026-08-08'), Date.parse('2026-08-07T22:00:00Z'));
+});
+
+test('madridMidnightMs: medianoche civil en invierno es 23:00Z del día anterior', () => {
+  assert.equal(madridMidnightMs('2026-01-15'), Date.parse('2026-01-14T23:00:00Z'));
+});
+
+test('madridDayKey: un instante de madrugada UTC pertenece al día civil español siguiente', () => {
+  assert.equal(madridDayKey(Date.parse('2026-08-08T23:30:00Z')), '2026-08-09');
 });

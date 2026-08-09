@@ -100,3 +100,57 @@ export function upperFirst(s) {
   const str = String(s ?? '');
   return str ? str[0].toUpperCase() + str.slice(1) : str;
 }
+
+// --- zona horaria de España (Europe/Madrid) ---
+
+export const TZ_ES = 'Europe/Madrid';
+const TZ_CACHE = new Map();
+
+/** Offset UTC (ms) vigente en Europe/Madrid en el instante dado; DST-aware. */
+export function tzOffsetMs(tz = TZ_ES, at = Date.now()) {
+  const key = `${tz}:${new Date(at).toISOString().slice(0, 13)}`;
+  let off = TZ_CACHE.get(key);
+  if (off !== undefined) return off;
+  try {
+    const part = new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName: 'longOffset' })
+      .formatToParts(new Date(at))
+      .find((p) => p.type === 'timeZoneName');
+    const m = /GMT([+-]\d{2}:\d{2})?/.exec(part ? part.value : '');
+    if (!m || !m[1]) off = 0;
+    else {
+      const neg = m[1][0] === '-' ? -1 : 1;
+      const [h, min] = m[1].slice(1).split(':').map(Number);
+      off = neg * (h * 3600 + min * 60) * 1000;
+    }
+  } catch {
+    off = 0;
+  }
+  TZ_CACHE.set(key, off);
+  return off;
+}
+
+/** Epoch ms de la medianoche civil (Europe/Madrid) del día local YYYY-MM-DD. */
+export function madridMidnightMs(localKey) {
+  const naive = Date.parse(`${localKey}T00:00:00Z`);
+  let ms = naive - tzOffsetMs(TZ_ES, naive);
+  const off2 = tzOffsetMs(TZ_ES, ms);
+  if (off2 !== tzOffsetMs(TZ_ES, naive)) ms = naive - off2;
+  return ms;
+}
+
+/** Fecha civil (Europe/Madrid) YYYY-MM-DD de un instante (ms). */
+export function madridDayKey(ms, tz = TZ_ES) {
+  try {
+    const p = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' })
+      .formatToParts(ms);
+    const val = (t) => (p.find((x) => x.type === t) || {}).value || '';
+    return `${val('year')}-${val('month')}-${val('day')}`;
+  } catch {
+    return localDayKey(new Date(ms));
+  }
+}
+
+/** Día civil (Madrid) de hoy, YYYY-MM-DD. */
+export function madridToday() {
+  return madridDayKey(Date.now());
+}

@@ -79,7 +79,23 @@ try {
   await sleep(100);
   check('modal cierra con Escape', await page.$eval('.modal', (m) => m.hidden === true));
 
-  // 5. Buscar
+  // 5. Favorito: estrella en la tarjeta de canal y dentro del modal
+  const favId = await page.$eval('.channel-block .fav-btn', (b) => b.dataset.fav);
+  await page.click('.channel-block .fav-btn');
+  await sleep(150);
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('epg_favs') || '[]'));
+  check('estrella marca favorito', stored.includes(favId), `fav=${favId}`);
+  await page.click('.channel-block .prog-live'); // reabre el modal
+  await page.waitForSelector('.modal:not([hidden])');
+  const mFav = await page.$eval('.modal .fav-btn', (b) => b.dataset.fav);
+  check('modal muestra estrella del canal', mFav === favId);
+  await page.click('.modal .fav-btn'); // desmarca desde el modal
+  await sleep(150);
+  const after = await page.evaluate(() => JSON.parse(localStorage.getItem('epg_favs') || '[]'));
+  check('estrella del modal desmarca', !after.includes(favId));
+  await page.keyboard.press('Escape');
+
+  // 6. Búsqueda
   await page.click('[data-view="buscar"]');
   await page.waitForSelector('.search-box');
   await page.type('.search-box', 'futbol');

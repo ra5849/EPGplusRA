@@ -298,6 +298,9 @@ footer.footer {
   box-shadow: 0 -10px 40px rgba(0, 0, 0, .5);
 }
 .m-title { margin: 0 0 4px; font-size: 19px; }
+.m-head { display: flex; align-items: flex-start; gap: 10px; }
+.m-head .m-title { flex: 1; }
+.m-fav { flex: none; margin-top: 2px; }
 .m-sub { color: var(--muted); margin: 0 0 10px; }
 .m-meta { color: var(--accent); font-size: 13px; font-weight: 600; }
 .m-desc { color: var(--text); margin-top: 12px; }

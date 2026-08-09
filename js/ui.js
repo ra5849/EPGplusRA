@@ -56,6 +56,7 @@ export function nowBlock(row, nowMs, fav) {
       <header class="block-head">
         <h3 class="ch-name">${esc(row.channel.name)}</h3>
         <span class="ch-id">${esc(row.channel.id)}</span>
+        ${favButton(row.channel.id, fav)}
       </header>
       ${cur || '<p class="muted small">Sin señal ahora</p>'}
       ${nxt ? `<div class="next-strip">${nxt}</div>` : ''}
@@ -121,13 +122,15 @@ export function toast(msg) {
 }
 
 /** Abre el modal de detalle del programa. */
-export function openModal(prog, channelName) {
+export function openModal(prog, channelName, isFav = false) {
   const m = document.getElementById('modal');
   if (!m) return;
   const s = Date.parse(prog.start);
   const e = Date.parse(prog.end);
   const dur = Math.round((e - s) / 60_000);
   m.querySelector('.m-title').textContent = prog.title;
+  const mFav = m.querySelector('.m-fav');
+  if (mFav) mFav.replaceWith(el(favButton(prog.channel_id, isFav, 'm-fav')));
   m.querySelector('.m-sub').textContent = prog.subtitle || '';
   m.querySelector('.m-meta').textContent = [
     channelName,

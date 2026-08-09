@@ -1,7 +1,7 @@
 // Parrilla horaria: filas por canal y columna de tiempo.
 // Renderiza tarjetas posicionadas por minutos absolutos del día.
 
-import { esc } from './ui.js';
+import { esc, favButton } from './ui.js';
 import { fmtTime } from './utils.js';
 
 export const MIN_PER_DAY = 24 * 60;
@@ -46,11 +46,11 @@ export function gridRows(channels, programsByChannel, { dayStartMin = 0, dayEndM
   return rows;
 }
 
-export function renderGrid(container, rows, { onOpen } = {}) {
+export function renderGrid(container, rows, { favorites = [] } = {}) {
   const wrap = el(`<div class="grid"></div>`);
   for (const { channel, blocks } of rows) {
     const row = el(`<div class="grid-row"></div>`);
-    const label = el(`<div class="grid-label">${esc(channel.name)}</div>`);
+    const label = el(`<div class="grid-label">${esc(channel.name)} ${favButton(channel.id, favorites.includes(channel.id))}</div>`);
     row.append(label);
     const track = el(`<div class="grid-track"></div>`);
     for (const b of blocks) {

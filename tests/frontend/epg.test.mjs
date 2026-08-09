@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {
   byStart, currentProgram, nextProgram, groupByChannel,
   nowNextByChannel, progress, minutesLeft, minutesUntil,
-  programDayKey, programsOfDay, isMovie, isSport, filteredBy,
+  programDayKey, programsOfDay, isMovie, isSport, filteredBy, programsInWindow,
 } from '../../js/epg.js';
 
 const P = (id, start, end, extra = {}) => ({ id, channel_id: 'TVE', title: `P${id}`, start, end, ...extra });
@@ -80,12 +80,25 @@ test('isSport deportes', () => {
   assert.equal(isSport({ category: 'Entretenimiento', category_raw: 'Fútbol', title: 'Gol' }), true);
 });
 
-test('filteredBy filtra día y ordena películas', () => {
+test('filteredBy filtra por ventana temporal y ordena', () => {
   const movies = [
     P('m1', '2026-08-08T20:00:00+00:00', '2026-08-08T22:00:00+00:00', { category: 'Cine', category_raw: 'Drama' }),
     P('m2', '2026-08-09T20:00:00+00:00', '2026-08-09T22:00:00+00:00', { category: 'Cine', category_raw: 'Comedia' }),
     P('n', '2026-08-08T21:00:00+00:00', '2026-08-08T22:00:00+00:00', { category: 'Noticias', category_raw: 'Informativo' }),
   ];
-  const r = filteredBy('movie', movies, '2026-08-08');
+  const start = Date.parse('2026-08-07T22:00:00Z'); // medianoche civil 8-ago en Madrid
+  const end = start + 86_400_000;
+  const r = filteredBy('movie', movies, start, end);
   assert.deepEqual(r.map((x) => x.id), ['m1']);
+});
+
+test('programsInWindow recorta por [start, end) y ordena', () => {
+  const all = [
+    P('a', '2026-08-07T21:00:00+00:00', '2026-08-07T23:00:00+00:00'),
+    P('b', '2026-08-07T22:30:00+00:00', '2026-08-08T00:30:00+00:00'),
+    P('c', '2026-08-08T21:00:00+00:00', '2026-08-08T23:00:00+00:00'),
+  ];
+  const start = Date.parse('2026-08-07T22:00:00Z');
+  const w = programsInWindow(all, start, start + 86_400_000);
+  assert.deepEqual(w.map((x) => x.id), ['b', 'c']);
 });

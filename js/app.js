@@ -2,11 +2,11 @@
 
 import { fetchChannels, fetchDay, fetchIndex, fetchMetadata } from './api.js';
 import { createStore, tick } from './state.js';
-import { esc, el, toast, openModal, closeModal, renderNowView, renderList } from './ui.js';
+import { esc, el, toast, favButton, openModal, closeModal, renderNowView, renderList } from './ui.js';
 import { renderGrid, gridRows } from './grid.js';
 import { searchPrograms, searchChannels, buildIndexEntry } from './search.js';
-import { nowNextByChannel, filteredBy, groupByChannel } from './epg.js';
-import { fmtTime, fmtDay, parseISO, utcDayKey, DAY } from './utils.js';
+import { nowNextByChannel, filteredBy, groupByChannel, programsInWindow } from './epg.js';
+import { fmtTime, fmtDay, parseISO, utcDayKey, DAY, madridMidnightMs, madridDayKey, madridToday } from './utils.js';
 import {
   getFavorites, toggleFavorite, getTheme, setTheme, getStartView, setStartView,
 } from './storage.js';
@@ -23,6 +23,7 @@ const store = createStore({
   programs: [],
   entries: [],
   day: '',
+  dayStart: NaN,
   days: [],
   favorites: [],
   theme: 'dark',
@@ -61,7 +62,7 @@ export async function boot() {
     metadata,
   });
 
-  await setDay(utcDayKey(new Date()));
+  await setDay(madridToday());
   bindNav();
   bindGlobal();
   setView(hashView() ?? getStartView(storage));
@@ -100,8 +101,13 @@ function channelName(id) {
 }
 
 async function setDay(key) {
-  store.set({ day: key });
-  const programs = (await fetchDay(key)) ?? [];
+  const start = madridMidnightMs(key);
+  const end = start + DAY;
+  store.set({ day: key, dayStart: start });
+  const f1 = utcDayKey(new Date(start));
+  const f2 = utcDayKey(new Date(end - 1));
+  const [a, b] = await Promise.all([fetchDay(f1), fetchDay(f2)]);
+  const programs = programsInWindow([...(a ?? []), ...(b ?? [])], start, end);
   const entries = programs.map((p) => buildIndexEntry(p, channelName(p.channel_id)));
   store.set({ programs, entries });
 }
@@ -174,7 +180,7 @@ function viewFavoritos() {
 }
 
 function viewGuia() {
-  const { channels, programs } = store.get();
+  const { channels, programs, favorites } = store.get();
   const byCh = groupByChannel(programs);
   const now = Date.now();
   const wrap = el('<div class="guia"></div>');
@@ -183,7 +189,7 @@ function viewGuia() {
     const list = (byCh.get(ch.id) ?? []).filter((p) => Date.parse(p.end) > now).slice(0, 10);
     if (!list.length) continue;
     const sec = el(`<section class="ch-guide">
-      <h3 class="ch-name">${esc(ch.name)}</h3>
+      <h3 class="ch-name">${esc(ch.name)} ${favButton(ch.id, favorites.includes(ch.id))}</h3>
       <div class="ch-guide-items"></div>
     </section>`);
     const box = sec.querySelector('.ch-guide-items');
@@ -199,12 +205,24 @@ function viewGuia() {
   root.append(wrap);
 }
 
+function dayChips() {
+  const { days } = store.get();
+  const today = madridToday();
+  const tomorrow = madridDayKey(Date.now() + DAY);
+  const keys = days.length
+    ? days.map((u) => madridDayKey(Date.parse(`${u}T12:00:00Z`))) // día civil equivalente
+    : [...new Set(Array.from({ length: 8 }, (_, i) => madridDayKey(Date.now() + i * DAY)))];
+  return keys.map((k) => ({
+    k,
+    label: k === today ? 'Hoy' : k === tomorrow ? 'Mañana' : k.slice(8),
+  }));
+}
+
 function viewParrilla() {
-  const { channels, programs, day, days } = store.get();
+  const { channels, programs, day } = store.get();
   const chips = el('<div class="day-picker"></div>');
-  const keys = days.length ? days : Array.from({ length: 8 }, (_, i) => utcDayKey(new Date(Date.now() + i * DAY)));
-  for (const k of keys) {
-    const btn = el(`<button class="chip${k === day ? ' on' : ''}">${k === utcDayKey(new Date()) ? 'Hoy' : k.slice(8)}</button>`);
+  for (const { k, label } of dayChips()) {
+    const btn = el(`<button class="chip${k === day ? ' on' : ''}">${label}</button>`);
     btn.addEventListener('click', async () => {
       if (k !== store.get('day')) {
         await setDay(k);
@@ -215,20 +233,20 @@ function viewParrilla() {
   }
   const box = el('<div class="grid-wrap"></div>');
   box.append(chips);
-  renderGrid(box, gridRows(channels, groupByChannel(programs), {}), {});
+  renderGrid(box, gridRows(channels, groupByChannel(programs), {}), { favorites: store.get('favorites') });
   root.append(box);
 }
 
 function viewCine() {
-  const { programs, day } = store.get();
-  const list = filteredBy('movie', programs, day);
+  const { programs, dayStart } = store.get();
+  const list = filteredBy('movie', programs, dayStart, dayStart + DAY);
   root.append(el('<h2 class="vh">Películas</h2>'));
   scalarList(list);
 }
 
 function viewDeportes() {
-  const { programs, day } = store.get();
-  const list = filteredBy('sport', programs, day);
+  const { programs, dayStart } = store.get();
+  const list = filteredBy('sport', programs, dayStart, dayStart + DAY);
   root.append(el('<h2 class="vh">Deportes</h2>'));
   scalarList(list);
 }
@@ -329,7 +347,7 @@ function bindGlobal() {
     const open = e.target.closest('[data-open]');
     if (open) {
       const prog = store.get('programs').find((p) => p.id === open.dataset.open);
-      if (prog) openModal(prog, channelName(prog.channel_id));
+      if (prog) openModal(prog, channelName(prog.channel_id), store.get('favorites').includes(prog.channel_id));
       return;
     }
     const star = e.target.closest('[data-fav]');
@@ -337,8 +355,10 @@ function bindGlobal() {
       const id = star.dataset.fav;
       const favs = toggleFavorite(storage, id);
       store.set({ favorites: favs });
+      const mFav = document.querySelector('.m-fav');
+      if (mFav) mFav.replaceWith(el(favButton(id, favs.includes(id), 'm-fav')));
       toast(favs.includes(id) ? 'Añadido a favoritos' : 'Quitado de favoritos');
-      if (['favoritos', 'now'].includes(store.get('view'))) render();
+      if (['now', 'favoritos', 'guia', 'parrilla', 'cine', 'deportes'].includes(store.get('view'))) render();
       return;
     }
     const addFav = e.target.closest('[data-go-fav]');
