@@ -22,7 +22,7 @@ Fecha de inicio: 2026-08-08. Entorno: Windows 11, Python 3.12 en
 | 12 | Verificación (tests + checklist local) | DONE — 27/27 unit + 10/10 e2e (Edge) |
 | 13 | Datos + GitHub Actions deploy | DONE — `.github/workflows/epg.yml` |
 | 14 | Documentación README/ARCHITECTURE | DONE |
-| 15 | Commit inicial + push al repo (manual) | PENDIENTE — requiere decisión del usuario |
+| 15 | Commit inicial + push al repo (manual) | DONE — repo `ra5849/EPGplusRA` público; Pages activo |
 
 ## Decisiones tomadas (histórico)
 
@@ -70,4 +70,5 @@ python -m http.server 8080 --directory .
 - [x] FASE 12: node --test + e2e Edge + checklist
 - [x] FASE 13: `.github/workflows/epg.yml` + `.gitignore` + `requirements.txt` (+fix "Ahora" vacío de madrugada: filtrar por `current || next`)
 - [x] FASE 14: README.md + ARCHITECTURE.md
-- [ ] FASE 15: `git init` + primer commit + crear repo GitHub + conectar Pages (manual, necesita confirmación del usuario)
+- [x] FASE 14: README.md + ARCHITECTURE.md
+- [x] FASE 15: `git init -b main` + commit `2bff0ef` (48 ficheros) → repo público `ra5849/EPGplusRA`, `gh repo create ... --push`; Pages habilitado vía API (`{"build_type":"workflow"}`). Fix CI: el colector necesita `requests` (requirements.txt). Workflow `c2f5a7e`: **collect 504 s (24 217 programas, 135 canales, anónimo) + unit green + deploy Pages OK** en https://ra5849.github.io/EPGplusRA/. Aviso: actions heredadas usan Node.js 20 (deprecado, forzado a 24) — migrar a checkout@v5 etc. cuando estén disponibles.
