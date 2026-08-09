@@ -70,6 +70,11 @@ try {
   await page.click('.channel-block .prog-live'); // abre modal
   await page.waitForSelector('.modal:not([hidden])');
   check('modal abre (data-open)', await page.$eval('.modal', (m) => m.hidden === false));
+  await page.click('.modal-close'); // cierre con la X (sin teclado)
+  await sleep(100);
+  check('modal cierra con la X', await page.$eval('.modal', (m) => m.hidden === true));
+  await page.click('.channel-block .prog-live'); // reabre para el test de ESC
+  await page.waitForSelector('.modal:not([hidden])');
   await page.keyboard.press('Escape');
   await sleep(100);
   check('modal cierra con Escape', await page.$eval('.modal', (m) => m.hidden === true));

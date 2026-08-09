@@ -152,7 +152,7 @@ function viewNow() {
   const rows = nowNextByChannel(channels, programs, now).filter((r) => r.current || r.next);
   const favRows = favorites.map((id) => rows.find((r) => r.channel.id === id)).filter(Boolean);
   const rest = rows.filter((r) => !favorites.includes(r.channel.id));
-  const ordered = [...favRows, ...rest.sort((a, b) => a.channel.name.localeCompare(b.channel.name, 'es'))];
+  const ordered = [...favRows, ...rest];
 
   root.append(el(`<div class="hero"><span class="hero-date">${fmtDay(new Date())}</span></div>`));
   if (ordered.length === 0) {
@@ -322,6 +322,10 @@ function bindNav() {
 
 function bindGlobal() {
   document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-close]') || e.target.id === 'modal') {
+      closeModal();
+      return;
+    }
     const open = e.target.closest('[data-open]');
     if (open) {
       const prog = store.get('programs').find((p) => p.id === open.dataset.open);
