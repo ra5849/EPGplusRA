@@ -1,0 +1,78 @@
+# Despliegue instantáneo: solo se lanza cuando el push NO toca el colector.
+# Usa los datos del día guardados en la caché por `epg.yml` (cron 06:10 UTC).
+# Si la caché está ausente u obsoleta (>10 h), regenera los datos (camino lento).
+
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'collector/**'
+      - 'tools/**'
+      - 'requirements.txt'
+      - '.github/workflows/epg.yml'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: deploy-fast
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Publicar en GitHub Pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Caché de datos EPG (del cron diario)
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: epg-data-cache
+          restore-keys: epg-data-
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Tests de unidad (frontend)
+        run: node --test "tests/frontend/*.test.mjs"
+
+      - name: Antigüedad de los datos
+        id: data
+        run: |
+          python - <<'PY'
+          import json, os
+          from datetime import datetime, timezone
+          if not os.path.exists('data/metadata.json'):
+              print('fresh=no')
+              raise SystemExit(0)
+          meta = json.load(open('data/metadata.json'))
+          gen = datetime.fromisoformat(meta['generated_at'].replace('Z', '+00:00'))
+          age_h = (datetime.now(timezone.utc) - gen).total_seconds() / 3600
+          fresh = 'yes' if age_h <= 10 else 'no'
+          print(f'fresh={fresh} age_h={age_h:.1f}')
+          PY
+
+      - name: Colector EPG (caché obsoleta o ausente → camino lento)
+        if: steps.data.outputs.fresh == 'no'
+        run: |
+          python -m pip install -r requirements.txt
+          python -m collector.main --days 7 --split
+
+      - name: Sanidad de datos
+        run: test -f data/metadata.json
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - id: deploy
+        uses: actions/deploy-pages@v4

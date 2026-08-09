@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: epg-daily
   cancel-in-progress: true
 
 jobs:
@@ -53,6 +53,13 @@ jobs:
 
       - name: Tests de unidad (frontend puro)
         run: node --test "tests/frontend/*.test.mjs"
+
+      - name: Cache de datos (para despliegues rápidos)
+        uses: actions/cache@v4
+        with:
+          path: data
+          key: epg-data-${{ github.run_id }}
+          restore-keys: epg-data-
 
       - name: Empaquetar datos
         uses: actions/upload-artifact@v4

@@ -24,9 +24,19 @@ python -m http.server 8080
 
 ```powershell
 npm.cmd install            # solo devDependencies (puppeteer-core)
-node --test "tests/frontend/*.test.mjs"   # 27 tests unit (lógica pura)
-node tests/e2e/smoke.mjs  # 10 checks e2e sobre Edge local
+node --test "tests/frontend/*.test.mjs"   # 32 tests unit (lógica pura)
+node tests/e2e/smoke.mjs  # 14 checks e2e sobre Edge local
 ```
+
+## Despliegue (dos workflows)
+
+- **`epg.yml`** — cada día (06:10 UTC = 08:10 Madrid) recopila el EPG completo
+  (7 días, ~8 min) y publica Pages; además guarda los datos en la caché de
+  GitHub Actions (~10 MB/día).
+- **`deploy-fast.yml`** — en cada push que **no** toca el colector despliega
+  con los datos de la caché: el sitio queda actualizado en ~1 minuto. Si la
+  caché no existe o está obsoleta (>10 h), regenera los datos (camino lento).
+- Los datos (`data/*`) no se versionan: los genera el CI.
 
 ## Estructura
 

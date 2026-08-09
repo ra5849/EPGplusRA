@@ -35,7 +35,7 @@ Fecha de inicio: 2026-08-08. Entorno: Windows 11, Python 3.12 en
 7. **Front separado por días**: los días completan un índice; si falla al cargar `data/epg/<día>.json` se intenta `data/epg.json` (compatibilidad single). Caches el día en memoria (Map); SW hace network-first para datos.
 8. **Privacidad heurística de favoritos** list rápido: prefijos del programa (T=Tarifa paga, D=Deportes, C=Cine, ...).
 9. **Vistas**: 8 secciones (Ahora, Favoritos, Guía completa, Parrilla, Cine, Deportes, Búsqueda, Ajustes), vista inicial "Ahora", navegación bottom-bar en móvil.
-10. **Deploy**: GitHub Actions `.github/workflows/epg.yml` con schedule diario (06:10 UTC) + dispatch + push a `main`. Job `collect` (python 3.12: `python -m collector.main --days 7 --split`, valida metadata.json, unit tests; artefacto `epg-data`) y job `deploy` (descarga datos → `upload-pages-artifact` → `deploy-pages`). Como los datos se generan en CI, `data/` está en `.gitignore`. Requiere en GitHub: Settings → Pages → Source: GitHub Actions.
+10. **Deploy**: dos workflows. `epg.yml`: cron diario 06:10 UTC (+dispatch, +push que toca `collector/**`) recopila el EPG y publica Pages; además guarda los datos en la caché de Actions (`epg-data-*`, ~10 MB/día, límite total 10 GB). `deploy-fast.yml`: en pushes de solo frontend restaura la caché y despliega en ~1 min (`paths-ignore: collector/**, tools/**, requirements.txt, epg.yml`); si la caché es vieja (>10 h) regenera los datos en el propio job. Como los datos se generan en CI, `data/` está en `.gitignore`. Requiere en GitHub: Settings → Pages → Source: GitHub Actions.
 11. **Licencia**: pendiente (probable MIT).
 
 ## Comandos útiles

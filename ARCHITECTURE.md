@@ -79,12 +79,17 @@ Sin framework: cliente HTTP con `requests` (única dependencia) + stdlib. Flujo 
 
 ## Despliegue
 
-Workflow `.github/workflows/epg.yml`:
+Workflow `.github/workflows/epg.yml` (diario, 06:10 UTC; ~8 min):
 
 1. **collect** — setup python 3.12 → `python -m collector.main --days 7 --split`;
-   valida `metadata.json` (status ok); ejecuta unit tests; sube artefacto `epg-data`.
+   valida `metadata.json` (status ok); ejecuta unit tests; guarda los datos
+   en la **caché de Actions** (`epg-data-*`); sube artefacto `epg-data`.
 2. **deploy** — checkout + descarga de datos → `upload-pages-artifact` (raíz
    con los datos) → `deploy-pages`.
+
+Workflow `.github/workflows/deploy-fast.yml` (push de solo frontend, sin
+tocar `collector/`): restaura los datos del día desde la caché y despliega
+en ~1 min. Si la caché no existe o tiene >10 h, regenera los datos ahí mismo.
 
 Requisito en el repo: *Settings → Pages → Source: GitHub Actions*.
 
