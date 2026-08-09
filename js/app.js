@@ -40,12 +40,19 @@ let root;
 let nav;
 let started = false;
 let guideFocus = '';
+let deferredInstall = null;
 
 export async function boot() {
   if (started) return;
   started = true;
   root = document.getElementById('app');
   nav = document.getElementById('nav');
+
+  // Captura el evento de instalación PWA para poder ofrecerlo desde Ajustes.
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredInstall = e;
+  });
 
   const theme = getTheme(storage);
   document.documentElement.dataset.theme = theme;
@@ -329,13 +336,34 @@ function viewBuscar() {
 
 function viewAjustes() {
   const theme = store.get('theme');
+  const installed = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const wrap = el(`<div class="settings">
     <button class="row theme-toggle" type="button">${theme === 'dark' ? '☀ Tema claro' : '☾ Tema oscuro'}</button>
     <label class="row">Vista inicial
       <select>${VIEWS.map((v) => `<option value="${v}" ${v === store.get('view') ? 'selected' : ''}>${VIEW_LABEL[v]}</option>`).join('')}</select>
     </label>
+    ${installed
+      ? '<p class="row installed">✓ La app está instalada en tu dispositivo</p>'
+      : `<button class="row btn-install" id="btn-install" type="button">
+           <span class="c-title">📲 Instalar app</span>
+           ${deferredInstall ? '<span class="c-meta">Disponible — toca para instalarla</span>' : '<span class="c-meta">Menú ⋮ → «Instalar aplicación» si no aparece</span>'}
+         </button>`}
     <p class="muted">${esc(metaInfo())}</p>
   </div>`);
+  const installBtn = wrap.querySelector('#btn-install');
+  if (installBtn) {
+    installBtn.addEventListener('click', async () => {
+      if (!deferredInstall) {
+        toast('Abre el menú ⋮ y pulsa «Instalar aplicación» (o Compartir → Pantalla de inicio).');
+        return;
+      }
+      deferredInstall.prompt();
+      await deferredInstall.userChoice;
+      deferredInstall = null;
+      toast('¡Instalada! Encuéntrala en tu pantalla de inicio.');
+      render();
+    });
+  }
   wrap.querySelector('.theme-toggle').addEventListener('click', () => {
     const next = store.get('theme') === 'dark' ? 'light' : 'dark';
     setTheme(storage, next);

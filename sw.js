@@ -1,5 +1,5 @@
 /* Service worker de Mi EPG: precache de la app y red-primero para los datos. */
-const VERSION = 'v5';
+const VERSION = 'v6';
 const CORE_CACHE = `miegp-core-${VERSION}`;
 const DATA_CACHE = `miegp-data-${VERSION}`;
 

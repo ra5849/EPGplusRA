@@ -214,6 +214,8 @@ footer.footer {
   vertical-align: 2px;
 }
 .row-cat.is-now { border-color: #e11d48; outline: 2px solid #e11d48; }
+.row-install { padding: 10px 12px; color: var(--muted); font-size: 13px; }
+.btn-install { border-color: var(--accent); }
 
 /* Guia por canal */
 .ch-guide { margin: 14px 0; }

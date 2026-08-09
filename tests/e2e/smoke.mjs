@@ -149,10 +149,12 @@ try {
   const cine = await page.$eval('#app', (el) => el.textContent.length);
   check('cine tiene contenido', cine > 40);
 
-  // 8. Ajustes
+  // 8. Ajustes (+ botón de instalación PWA)
   await page.click('[data-view="ajustes"]');
   await page.waitForSelector('.settings');
   check('ajustes render', true);
+  const installBtn = await page.$('#btn-install');
+  check('botón instalar app en ajustes', installBtn !== null);
 
   // 9. Sin errores de consola
   check('sin errores JS en consola', errors.length === 0, errors.join(' | ').slice(0, 300));

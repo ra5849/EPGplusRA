@@ -94,9 +94,10 @@ export function renderGrid(container, rows, { favorites = [], nowMs = Date.now()
 
   container.replaceChildren(scroller);
 
-  // Empieza la vista centrada en la hora actual (futuro a la derecha, pasado a la izquierda).
+  // Empieza la vista justo en la hora actual: la línea roja queda a la izquierda
+  // (futuro a la derecha, pasado hacia la izquierda).
   requestAnimationFrame(() => {
-    scroller.scrollLeft = Math.max(0, nowPx - PX_PER_HOUR * 2.5);
+    scroller.scrollLeft = Math.max(0, nowPx - PX_PER_HOUR);
   });
 }
 
