@@ -156,48 +156,58 @@ export function madridToday() {
 }
 
 // --- formateo de fecha/hora FIJO en Europe/Madrid ---
+// Aritmética pura (sin Intl en caliente): robusta y sin NaN en cualquier navegador.
+// El offset de Madrid se calcula una vez (DST-aware) con fallback al offset del dispositivo.
 
-const ZF_CACHE = new Map();
+let esOffsetMin = null;
 
-function zonedParts(ms, tz) {
-  const key = `${tz}:${new Date(ms).toISOString()}`;
-  if (!ZF_CACHE.has(key)) {
+function esUtcOffsetMin(ms) {
+  if (esOffsetMin === null) {
     try {
-      const parts = new Intl.DateTimeFormat('es-ES', {
-        timeZone: tz, hourCycle: 'h23',
-        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
-        hour: 'numeric', minute: '2-digit',
-      }).formatToParts(ms);
-      const val = (t) => (parts.find((x) => x.type === t) || {}).value || '';
-      ZF_CACHE.set(key, {
-        wd: String(val('weekday')).replace('.', ''),
-        day: Number(val('day')),
-        month: val('month'),
-        h: Number(val('hour')),
-        m: Number(val('minute')),
-      });
+      const part = new Intl.DateTimeFormat('en-GB', { timeZone: TZ_ES, timeZoneName: 'longOffset' })
+        .formatToParts(new Date(ms))
+        .find((p) => p.type === 'timeZoneName');
+      const m = /GMT([+-]\d{2}:\d{2})?/.exec(part ? part.value : '');
+      if (m && m[1]) {
+        const neg = m[1][0] === '-' ? -1 : 1;
+        const [h, min] = m[1].slice(1).split(':').map(Number);
+        esOffsetMin = neg * (h * 60 + min);
+      } else {
+        esOffsetMin = -new Date(ms).getTimezoneOffset();
+      }
     } catch {
-      const d = new Date(ms);
-      ZF_CACHE.set(key, { wd: '', day: d.getDate(), month: '', h: d.getHours(), m: d.getMinutes() });
+      esOffsetMin = -new Date(ms).getTimezoneOffset();
     }
   }
-  return ZF_CACHE.get(key);
+  return esOffsetMin;
 }
 
-/** Reloj HH:MM en la zona horaria dada (por defecto España, NO la del dispositivo). */
+/** Minutos dentro del día civil (zona España) de un instante (ms o ISO). Nunca NaN. */
+function zonedMinutesOf(ms) {
+  if (!Number.isFinite(ms)) return 0;
+  return ((((ms / 60000) + esUtcOffsetMin(ms)) % 1440) + 1440) % 1440;
+}
+
+/** Reloj HH:MM fijo en España (NO la hora del dispositivo). */
 export function fmtTimeZ(ms, tz = TZ_ES) {
-  const p = zonedParts(ms, tz);
-  return `${pad2(p.h)}:${pad2(p.m)}`;
+  if (!Number.isFinite(ms)) return '--:--';
+  const min = zonedMinutesOf(ms);
+  return `${pad2(Math.floor(min / 60))}:${pad2(Math.floor(min % 60))}`;
 }
 
 /** Día corto en español para un instante, zona España (ej. "vie 8 ago"). */
 export function fmtDayZ(ms, tz = TZ_ES) {
-  const p = zonedParts(ms, tz);
-  return `${p.wd} ${p.day} ${p.month}`.trim();
+  if (!Number.isFinite(ms)) return '';
+  const d = new Date(ms + esUtcOffsetMin(ms) * 60000);
+  return `${DIA_CORTO[d.getUTCDay()]} ${d.getUTCDate()} ${MES_CORTO[d.getUTCMonth()]}`;
 }
 
-/** Minutos dentro del día civil (zona España) de un instante ISO. */
+/** Minutos dentro del día civil (zona España) de un instante ISO. Nunca NaN. */
 export function zonedMinutes(iso, tz = TZ_ES) {
-  const p = zonedParts(Date.parse(iso), tz);
-  return p.h * 60 + p.m;
+  return zonedMinutesOf(Date.parse(iso));
+}
+
+/** Minutos dentro del día civil (zona España) de un instante en ms. Nunca NaN. */
+export function zonedMinutesMs(ms) {
+  return zonedMinutesOf(ms);
 }

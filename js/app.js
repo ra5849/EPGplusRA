@@ -115,7 +115,8 @@ async function setDay(key) {
   const f1 = utcDayKey(new Date(start));
   const f2 = utcDayKey(new Date(end - 1));
   const [a, b] = await Promise.all([fetchDay(f1), fetchDay(f2)]);
-  const programs = programsInWindow([...(a ?? []), ...(b ?? [])], start, end);
+  const programs = programsInWindow([...(a ?? []), ...(b ?? [])], start, end)
+    .map((p) => ({ ...p, startMs: Date.parse(p.start), endMs: Date.parse(p.end) }));
   const entries = programs.map((p) => buildIndexEntry(p, channelName(p.channel_id)));
   store.set({ programs, entries });
 }

@@ -85,6 +85,10 @@ try {
   await sleep(150);
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('epg_favs') || '[]'));
   check('estrella marca favorito', stored.includes(favId), `fav=${favId}`);
+  await page.reload({ waitUntil: 'networkidle0' });
+  await page.waitForSelector('.channel-block, .hint', { timeout: 20000 });
+  const afterReload = await page.evaluate(() => JSON.parse(localStorage.getItem('epg_favs') || '[]'));
+  check('favorito persiste tras recargar', afterReload.includes(favId), `fav=${favId}`);
   await page.click('.channel-block .prog-live'); // reabre el modal
   await page.waitForSelector('.modal:not([hidden])');
   const mFav = await page.$eval('.modal .fav-btn', (b) => b.dataset.fav);
@@ -135,6 +139,9 @@ try {
   await page.waitForSelector('.grid-row');
   const gridRows = await page.$$eval('.grid-row', (els) => els.length);
   check('parrilla renderiza filas', gridRows > 0, `rows=${gridRows}`);
+  const positions = await page.$$eval('.gprog', (els) => els.map((b) => parseFloat(b.style.left)));
+  const spread = positions.filter((v) => Number.isFinite(v) && v > 0).length;
+  check('bloques con posición real (no apilados)', spread > 10, `moved=${spread}/${positions.length}`);
   const hoursCount = await page.$$eval('.grid-hours .hour', (els) => els.length);
   check('escala de horas visible', hoursCount >= 12, `hours=${hoursCount}`);
   check('línea roja de hora actual', (await page.$('.now-line')) !== null);

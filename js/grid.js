@@ -4,7 +4,7 @@
 // Escala fija en píxeles: cada hora de reloj ocupa PX_PER_HOUR píxeles.
 
 import { esc, favButton } from './ui.js';
-import { fmtTimeZ, zonedMinutes } from './utils.js';
+import { fmtTimeZ, zonedMinutes, zonedMinutesMs } from './utils.js';
 
 export const MIN_PER_DAY = 24 * 60;
 export const PX_PER_HOUR = 60;
@@ -14,14 +14,14 @@ export const LABEL_WIDTH = 130;
 
 /** Ajusta inicio/fin de un programa al rango [dayStart, dayEnd] en minutos. */
 export function clip(prog, dayStartMin, dayEndMin) {
-  const s = Math.max(dayStartMin, minutesOfDay(prog.start));
-  const e = Math.min(dayEndMin, minutesOfDay(prog.end));
+  const s = Math.max(dayStartMin, minutesOfDay(prog.startMs ?? prog.start));
+  const e = Math.min(dayEndMin, minutesOfDay(prog.endMs ?? prog.end));
   return { s, e, visible: e > s };
 }
 
-/** Minutos del día civil (madrid fijo) de un instante ISO. */
-export function minutesOfDay(iso) {
-  return zonedMinutes(iso);
+/** Minutos del día civil (madrid fijo) de un instante (ISO o ms precalculado). */
+export function minutesOfDay(isoOrMs) {
+  return typeof isoOrMs === 'number' ? zonedMinutesMs(isoOrMs) : zonedMinutes(isoOrMs);
 }
 
 /**
@@ -38,7 +38,7 @@ export function gridRows(channels, programsByChannel, { dayStartMin = 0, dayEndM
     if (progs.length === 0) continue;
     const blocks = [];
     for (const prog of progs) {
-      const { start: s, end: e, visible } = clip(prog, dayStartMin, dayEndMin);
+      const { s, e, visible } = clip(prog, dayStartMin, dayEndMin);
       if (!visible) continue;
       blocks.push({
         prog,
@@ -52,6 +52,7 @@ export function gridRows(channels, programsByChannel, { dayStartMin = 0, dayEndM
 }
 
 export function renderGrid(container, rows, { favorites = [], nowMs = Date.now() } = {}) {
+  const safe = (n) => (Number.isFinite(n) ? Math.round(n) : 0);
   const wrap = el(`<div class="grid-wrap"></div>`);
   const scroller = el(
     `<div class="grid-scroller" tabindex="0"><div class="grid-canvas" style="width:${LABEL_WIDTH + PX_PER_DAY}px"></div></div>`,
@@ -78,7 +79,7 @@ export function renderGrid(container, rows, { favorites = [], nowMs = Date.now()
     for (const b of blocks) {
       track.append(
         el(
-          `<button class="gprog" data-open="${esc(b.prog.id)}" style="left:${b.leftPx}px;width:${b.widthPx}px">
+          `<button class="gprog" data-open="${esc(b.prog.id)}" style="left:${safe(b.leftPx)}px;width:${safe(b.widthPx)}px">
              <span class="t-title">${esc(b.prog.title)}</span>
              <span class="t-time">${fmtTimeZ(Date.parse(b.prog.start))}</span>
            </button>`,

@@ -63,9 +63,13 @@ python -m http.server 8080 --directory .
 - Búsqueda: índice por título/subtítulo/descripción/category_raw/canal. Solo el ~6% de programas tienen `description` (la ficha del proveedor casi no funciona anónimo); el 81% tiene `subtitle` (indexado).
 - Reloj de la UI: **fijo en Europe/Madrid** (`fmtTimeZ`, `fmtDayZ`, `zonedMinutes`), independiente del reloj del dispositivo. Resultado de canal en buscador → abre la Guía de ese canal (`data-guide`); resultado de programa → modal del evento.
 
-## ToDo próximio
+## ToDo pendiente
 
-- [x] FASE 8: js/utils.js, js/epg.js, js/search.js, js/storage.js + tests/frontend/*.test.mjs
+- [ ] Migrar actions heredadas (Node 20 → 24, checkout@v5) cuando estén disponibles.
+- [ ] Licencia (probable MIT).
+- [x] FASE 16 (parrilla sincroguía): escala horaria fija 60 px/h, filas por canal, horas sticky, línea roja de la hora actual, scroll horizontal con inicio centrado en la hora actual (commit `53ba55f`, SW v5).
+- [x] FASE 17: Cine/Deportes auto-scroll al programa en antena (marca `is-now` + badge AHORA) y botón "Instalar app" (PWA) en Ajustes (commit `8634716`, SW v6).
+- [x] FASE 18 (fix bloques apilados `left:0px` en Parrilla): causa raíz = `clip()` devuelve `{s, e, visible}` pero `gridRows` desestructuraba `{start: s, end: e, visible}` → `s/e = undefined` → `leftPx = NaN` → guardas a 0px. Fix: desestructuración `{ s, e, visible }`. Refuerzos: `setDay` precalcula `startMs/endMs` (sin parsear en el render), `utils.js` usa aritmética pura (sin Intl en caliente) con `esUtcOffsetMin` por `longOffset` (el `shortOffset` devuelve `GMT+2` sin minutos y rompía el regex en Edge/Node). Verificado: units 36/36, e2e 24/24 (bloques con posición real `moved=2975/3002`), SW v7.
 - [x] FASE 9: js/api.js + js/state.js
 - [x] FASE 10: js/ui.js, js/grid.js, js/app.js
 - [x] FASE 11: index.html, styles.css, manifest.json, sw.js
