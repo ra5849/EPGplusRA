@@ -130,11 +130,18 @@ try {
     check('canal abre su Guía (no favorita)', true);
   }
 
-  // 6. Parrilla renderiza filas
+  // 6. Parrilla estilo sincroguía: filas + escala horaria + línea "ahora" + scroll horizontal
   await page.click('[data-view="parrilla"]');
   await page.waitForSelector('.grid-row');
   const gridRows = await page.$$eval('.grid-row', (els) => els.length);
   check('parrilla renderiza filas', gridRows > 0, `rows=${gridRows}`);
+  const hoursCount = await page.$$eval('.grid-hours .hour', (els) => els.length);
+  check('escala de horas visible', hoursCount >= 12, `hours=${hoursCount}`);
+  check('línea roja de hora actual', (await page.$('.now-line')) !== null);
+  const scrollable = await page.$eval('.grid-scroller', (el) => el.scrollWidth > el.clientWidth);
+  check('parrilla con scroll horizontal', scrollable);
+  const scrolled = await page.$eval('.grid-scroller', (el) => el.scrollLeft);
+  check('parrilla centrada en la hora actual', scrolled > 0, `scrollLeft=${scrolled}`);
 
   // 7. Cine
   await page.click('[data-view="cine"]');

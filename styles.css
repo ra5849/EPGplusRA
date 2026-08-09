@@ -202,6 +202,18 @@ footer.footer {
 .g-title, .c-title { font-weight: 600; color: var(--text); }
 .c-meta, .g-id { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 .g-sub { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.badge-now {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: #e11d48;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  vertical-align: 2px;
+}
+.row-cat.is-now { border-color: #e11d48; outline: 2px solid #e11d48; }
 
 /* Guia por canal */
 .ch-guide { margin: 14px 0; }
@@ -209,21 +221,65 @@ footer.footer {
 .ch-name::before { content: '📺 '; }
 .ch-guide.focused { border: 1px solid var(--accent); border-radius: 10px; padding: 6px 8px; }
 
-/* ----- Parrilla ----- */
+/* ----- Parrilla (estilo sincroguía) ----- */
 .grid-wrap { position: relative; }
-.grid { overflow-x: auto; padding: 6px 0 12px; }
-.grid-row { display: flex; align-items: stretch; margin-bottom: 4px; }
+.grid-scroller {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 220px);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  position: relative;
+}
+.grid-canvas { position: relative; }
+.grid-hours {
+  position: sticky;
+  top: 0;
+  height: 26px;
+  background: var(--bg);
+  z-index: 2;
+  border-bottom: 1px solid var(--border);
+}
+.grid-hours .hour {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  box-sizing: border-box;
+  border-left: 1px solid var(--border);
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 12px,
+      var(--border) 12px,
+      var(--border) 13px,
+      transparent 13px
+    );
+}
+.grid-hours .hour-label {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.grid-row { position: relative; display: flex; margin-bottom: 2px; }
 .grid-label {
-  flex: 0 0 110px;
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  flex: 0 0 130px;
   font-size: 12px;
   font-weight: 700;
   color: var(--muted);
-  padding: 8px 8px 0 0;
+  background: var(--bg);
+  padding: 8px 8px 0 8px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  border-right: 1px solid var(--border);
 }
-.grid-track { position: relative; height: 46px; flex: 1 1 auto; }
+.grid-track { position: relative; height: 46px; flex: 0 0 auto; }
 .gprog {
   position: absolute;
   top: 3px;
@@ -237,10 +293,22 @@ footer.footer {
   overflow: hidden;
   text-align: left;
   min-width: 18px;
+  box-sizing: border-box;
 }
 .gprog .t-title { display: block; font-weight: 700; white-space: nowrap; }
 .gprog .t-time { color: var(--muted); }
 .gprog:hover, .gprog:focus-visible { border-color: var(--accent); }
+.now-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: #e11d48;
+  z-index: 2;
+  pointer-events: none;
+}
+.grid-scroller::-webkit-scrollbar { height: 10px; width: 10px; }
+.grid-scroller::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
 
 /* ----- Búsqueda ----- */
 .search-view { max-width: 640px; margin: 0 auto; }

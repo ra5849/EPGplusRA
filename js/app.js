@@ -262,12 +262,30 @@ function scalarList(list) {
     root.append(el(`<p class="hint">Sin programas en este día · ${fmtDayZ(Date.now())}</p>`));
     return;
   }
-  renderList(root, list, (p) => `
-    <button class="row-cat" data-open="${esc(p.id)}">
-      <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
-      <span class="c-title">${esc(p.title)}</span>
-      <span class="c-meta">${esc(channelName(p.channel_id))} · ${esc(p.category_raw || p.category || '')}</span>
-    </button>`);
+  const nowMs = Date.now();
+  const wrap = el('<div class="list"></div>');
+  let autoFocus = -1;
+  for (let i = 0; i < list.length; i++) {
+    const p = list[i];
+    const startMs = Date.parse(p.start);
+    const endMs = Date.parse(p.end);
+    if (autoFocus < 0 && endMs > nowMs) autoFocus = i;
+    const isNow = startMs <= nowMs && nowMs < endMs;
+    wrap.append(el(`
+      <button class="row-cat${isNow ? ' is-now' : ''}" data-open="${esc(p.id)}">
+        <span class="time">${fmtTimeZ(startMs)}</span>
+        <span class="c-title">${esc(p.title)}</span>
+        ${isNow ? '<span class="badge-now">AHORA</span>' : ''}
+        <span class="c-meta">${esc(channelName(p.channel_id))} · ${esc(p.category_raw || p.category || '')}</span>
+      </button>`));
+  }
+  root.append(wrap);
+  // Coloca la vista en el programa en antena o el siguiente (hora actual de Madrid).
+  requestAnimationFrame(() => {
+    const rows = wrap.querySelectorAll('.row-cat');
+    const target = rows[autoFocus < 0 ? 0 : autoFocus];
+    if (target) target.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  });
 }
 
 function viewBuscar() {
