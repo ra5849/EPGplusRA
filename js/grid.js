@@ -2,7 +2,7 @@
 // Renderiza tarjetas posicionadas por minutos absolutos del día.
 
 import { esc, favButton } from './ui.js';
-import { fmtTime } from './utils.js';
+import { fmtTimeZ, zonedMinutes } from './utils.js';
 
 export const MIN_PER_DAY = 24 * 60;
 
@@ -13,10 +13,9 @@ export function clip(prog, dayStartMin, dayEndMin) {
   return { s, e, visible: e > s };
 }
 
-/** Minutos del día local de un instante ISO. */
+/** Minutos del día civil (madrid fijo) de un instante ISO. */
 export function minutesOfDay(iso) {
-  const d = new Date(iso);
-  return d.getHours() * 60 + d.getMinutes() + Math.round(d.getSeconds() / 60);
+  return zonedMinutes(iso);
 }
 
 /**
@@ -57,7 +56,7 @@ export function renderGrid(container, rows, { favorites = [] } = {}) {
       const card = el(
         `<button class="gprog" data-open="${esc(b.prog.id)}" style="left:${b.leftPct}%;width:${b.widthPct}%">
            <span class="t-title">${esc(b.prog.title)}</span>
-           <span class="t-time">${fmtTime(new Date(Date.parse(b.prog.start)))}</span>
+           <span class="t-time">${fmtTimeZ(Date.parse(b.prog.start))}</span>
          </button>`,
       );
       track.append(card);

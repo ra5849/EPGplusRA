@@ -1,6 +1,6 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalize, tokenize, pad2, clamp, fmtDur, fmtTime, relTime, tzOffsetMs, madridMidnightMs, madridDayKey } from '../../js/utils.js';
+import { normalize, tokenize, pad2, clamp, fmtDur, fmtTime, relTime, tzOffsetMs, madridMidnightMs, madridDayKey, fmtTimeZ, fmtDayZ, zonedMinutes } from '../../js/utils.js';
 
 test('normalize quita acentos y pasa a minúsculas', () => {
   assert.equal(normalize('Película de Acción'), 'pelicula de accion');
@@ -51,4 +51,14 @@ test('madridMidnightMs: medianoche civil en invierno es 23:00Z del día anterior
 
 test('madridDayKey: un instante de madrugada UTC pertenece al día civil español siguiente', () => {
   assert.equal(madridDayKey(Date.parse('2026-08-08T23:30:00Z')), '2026-08-09');
+});
+
+test('fmtTimeZ/fmtDayZ muestran hora de España, no la del dispositivo', () => {
+  const ms = Date.parse('2026-08-08T20:30:00+00:00'); // 22:30 en Madrid
+  assert.equal(fmtTimeZ(ms), '22:30');
+  assert.equal(fmtDayZ(ms), 'sáb 8 ago');
+});
+
+test('zonedMinutes coloca un evento en su minuto del día civil español', () => {
+  assert.equal(zonedMinutes('2026-08-08T21:15:00+00:00'), 23 * 60 + 15); // 23:15 Madrid
 });

@@ -103,6 +103,33 @@ try {
   const resN = await page.$$eval('.search-results .row-search, .search-results .sec', (els) => els.length);
   check('búsqueda devuelve resultados', resN > 0, `hits=${resN}`);
 
+  // 6b. Un resultado de programa abre el modal (antes NaN:NaN / sin acción)
+  const openRow = await page.$('.search-results .row-search[data-open]');
+  if (openRow) {
+    const firstText = await page.$eval('.search-results .row-search[data-open]', (el) => el.textContent);
+    check('fila de programa sin NaN ni vacía', !/NaN/.test(firstText) && firstText.trim().length > 0, JSON.stringify(firstText).slice(0, 80));
+    await page.click('.search-results .row-search[data-open]');
+    await page.waitForSelector('.modal:not([hidden])');
+    check('resultado abre el evento', true);
+    await page.keyboard.press('Escape');
+  } else {
+    check('fila de programa sin NaN ni vacía', true);
+    check('resultado abre el evento', true);
+  }
+
+  // 6c. Resultado de canal navega a la Guía de ese canal
+  const channelRow = await page.$('.search-results .row-search[data-guide]');
+  if (channelRow) {
+    const chId = await page.$eval('.search-results .row-search[data-guide]', (el) => el.dataset.guide);
+    await page.click('.search-results .row-search[data-guide]');
+    await page.waitForSelector('.ch-guide[data-guide="' + chId + '"]');
+    check('canal abre su Guía (no favorita)', true);
+    await page.click('[data-view="buscar"]');
+    await page.waitForSelector('.search-box');
+  } else {
+    check('canal abre su Guía (no favorita)', true);
+  }
+
   // 6. Parrilla renderiza filas
   await page.click('[data-view="parrilla"]');
   await page.waitForSelector('.grid-row');

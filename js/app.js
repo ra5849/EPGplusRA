@@ -6,7 +6,7 @@ import { esc, el, toast, favButton, openModal, closeModal, renderNowView, render
 import { renderGrid, gridRows } from './grid.js';
 import { searchPrograms, searchChannels, buildIndexEntry } from './search.js';
 import { nowNextByChannel, filteredBy, groupByChannel, programsInWindow } from './epg.js';
-import { fmtTime, fmtDay, parseISO, utcDayKey, DAY, madridMidnightMs, madridDayKey, madridToday } from './utils.js';
+import { fmtTimeZ, fmtDayZ, utcDayKey, DAY, madridMidnightMs, madridDayKey, madridToday } from './utils.js';
 import {
   getFavorites, toggleFavorite, getTheme, setTheme, getStartView, setStartView,
 } from './storage.js';
@@ -39,6 +39,7 @@ const storage = {
 let root;
 let nav;
 let started = false;
+let guideFocus = '';
 
 export async function boot() {
   if (started) return;
@@ -79,7 +80,7 @@ function updateStatus() {
   if (!status) return;
   const meta = store.get('metadata');
   status.textContent = meta
-    ? `Datos: ${fmtDay(parseISO(meta.generated_at))} · ${meta.channels_available ?? '?'} canales`
+    ? `Datos: ${fmtDayZ(Date.parse(meta.generated_at))} · ${meta.channels_available ?? '?'} canales`
     : 'Buscando datos…';
 }
 
@@ -160,7 +161,7 @@ function viewNow() {
   const rest = rows.filter((r) => !favorites.includes(r.channel.id));
   const ordered = [...favRows, ...rest];
 
-  root.append(el(`<div class="hero"><span class="hero-date">${fmtDay(new Date())}</span></div>`));
+  root.append(el(`<div class="hero"><span class="hero-date">${fmtDayZ(Date.now())}</span></div>`));
   if (ordered.length === 0) {
     root.append(el('<p class="hint">Sin programación en este momento. Revisa la guía.</p>'));
     return;
@@ -188,14 +189,14 @@ function viewGuia() {
   for (const ch of channels) {
     const list = (byCh.get(ch.id) ?? []).filter((p) => Date.parse(p.end) > now).slice(0, 10);
     if (!list.length) continue;
-    const sec = el(`<section class="ch-guide">
+    const sec = el(`<section class="ch-guide${guideFocus === ch.id ? ' focused' : ''}" data-guide="${esc(ch.id)}">
       <h3 class="ch-name">${esc(ch.name)} ${favButton(ch.id, favorites.includes(ch.id))}</h3>
       <div class="ch-guide-items"></div>
     </section>`);
     const box = sec.querySelector('.ch-guide-items');
     for (const p of list) {
       box.append(el(`<button class="row-guide" data-open="${esc(p.id)}">
-        <span class="time">${fmtTime(parseISO(p.start))}</span>
+        <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
         <span class="g-title">${esc(p.title)}</span>
       </button>`));
     }
@@ -203,6 +204,11 @@ function viewGuia() {
     if (++n >= 40) break;
   }
   root.append(wrap);
+  if (guideFocus) {
+    requestAnimationFrame(() => {
+      wrap.querySelector(`[data-guide="${esc(guideFocus)}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  }
 }
 
 function dayChips() {
@@ -238,27 +244,27 @@ function viewParrilla() {
 }
 
 function viewCine() {
-  const { programs, dayStart } = store.get();
+  const { programs, day, dayStart } = store.get();
   const list = filteredBy('movie', programs, dayStart, dayStart + DAY);
-  root.append(el('<h2 class="vh">Películas</h2>'));
+  root.append(el(`<h2 class="vh">Películas · ${esc(day)}</h2>`));
   scalarList(list);
 }
 
 function viewDeportes() {
-  const { programs, dayStart } = store.get();
+  const { programs, day, dayStart } = store.get();
   const list = filteredBy('sport', programs, dayStart, dayStart + DAY);
-  root.append(el('<h2 class="vh">Deportes</h2>'));
+  root.append(el(`<h2 class="vh">Deportes · ${esc(day)}</h2>`));
   scalarList(list);
 }
 
 function scalarList(list) {
   if (!list.length) {
-    root.append(el('<p class="hint">Sin programas en este día.</p>'));
+    root.append(el(`<p class="hint">Sin programas en este día · ${fmtDayZ(Date.now())}</p>`));
     return;
   }
   renderList(root, list, (p) => `
     <button class="row-cat" data-open="${esc(p.id)}">
-      <span class="time">${fmtTime(parseISO(p.start))}</span>
+      <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
       <span class="c-title">${esc(p.title)}</span>
       <span class="c-meta">${esc(channelName(p.channel_id))} · ${esc(p.category_raw || p.category || '')}</span>
     </button>`);
@@ -282,7 +288,7 @@ function viewBuscar() {
     if (chHits.length) {
       results.append(el('<div class="sec">Canales</div>'));
       for (const c of chHits) {
-        results.append(el(`<button class="row-search" data-go-fav="${esc(c.id)}">
+        results.append(el(`<button class="row-search" data-guide="${esc(c.id)}">
           <span class="g-title">${esc(c.name)}</span><span class="g-id">${esc(c.id)}</span>
         </button>`));
       }
@@ -290,10 +296,12 @@ function viewBuscar() {
     if (hits.length) {
       results.append(el('<div class="sec">Programas</div>'));
       for (const h of hits) {
-        results.append(el(`<button class="row-search" data-open="${esc(h.id)}">
-          <span class="time">${fmtTime(parseISO(h.start))}</span>
-          <span class="g-title">${esc(h.title)}</span>
-          <span class="g-id">${esc(channelName(h.channel_id))}</span>
+        const p = h.prog;
+        results.append(el(`<button class="row-search" data-open="${esc(p.id)}">
+          <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
+          <span class="g-title">${esc(p.title)}</span>
+          <span class="g-id">${esc(channelName(p.channel_id))}</span>
+          ${p.subtitle ? `<span class="g-sub">${esc(p.subtitle)}</span>` : ''}
         </button>`));
       }
     }
@@ -326,7 +334,7 @@ function viewAjustes() {
 function metaInfo() {
   const meta = store.get('metadata');
   if (!meta) return 'Datos no disponibles todavía.';
-  return `Actualizado ${fmtDay(parseISO(meta.generated_at))} · ${meta.channels_available} canales · ${meta.programs} programas`;
+  return `Actualizado ${fmtDayZ(Date.parse(meta.generated_at))} · ${meta.channels_available} canales · ${meta.programs} programas`;
 }
 
 // ------------------- eventos -------------------
@@ -361,12 +369,11 @@ function bindGlobal() {
       if (['now', 'favoritos', 'guia', 'parrilla', 'cine', 'deportes'].includes(store.get('view'))) render();
       return;
     }
-    const addFav = e.target.closest('[data-go-fav]');
-    if (addFav) {
-      const id = addFav.dataset.goFav;
-      const favs = toggleFavorite(storage, id);
-      store.set({ favorites: favs });
-      toast(favs.includes(id) ? 'Añadido a favoritos' : 'Quitado de favoritos');
+    const guide = e.target.closest('[data-guide]');
+    if (guide) {
+      guideFocus = guide.dataset.guide;
+      setView('guia');
+      return;
     }
   });
   document.addEventListener('keydown', (e) => {

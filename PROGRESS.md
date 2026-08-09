@@ -59,7 +59,9 @@ python -m http.server 8080 --directory .
 - Warning aceptado del procesador: `eventos duplicados por (canal, inicio) ignorados: 657` (dedupe por (channel,start)).
 - Encoding: el `main.py` reconfigurea stdout a UTF-8 (fix UnicodeEncodeError con `→`).
 - `tools/gen_icons.py` genera: icon-192/512, icon-maskable-512, apple-touch-icon, favicon-32 (sin Pillow).
-- FASE 8 completa: js/{utils,epg,search,storage}.js puros (sin DOM) con tests `node --test tests/frontend/` (27/27). OJO: PowerShell 5.1 `Set-Content` corrompe UTF-8 sin BOM (mojibake) — no volver a reescribir ficheros JS desde PowerShell.
+- FASE 8 completa: js/{utils,epg,search,storage}.js puros (sin DOM) con tests `node --test tests/frontend/` (36/36). OJO: PowerShell 5.1 `Set-Content` corrompe UTF-8 sin BOM (mojibake) — no volver a reescribir ficheros JS desde PowerShell.
+- Búsqueda: índice por título/subtítulo/descripción/category_raw/canal. Solo el ~6% de programas tienen `description` (la ficha del proveedor casi no funciona anónimo); el 81% tiene `subtitle` (indexado).
+- Reloj de la UI: **fijo en Europe/Madrid** (`fmtTimeZ`, `fmtDayZ`, `zonedMinutes`), independiente del reloj del dispositivo. Resultado de canal en buscador → abre la Guía de ese canal (`data-guide`); resultado de programa → modal del evento.
 
 ## ToDo próximio
 

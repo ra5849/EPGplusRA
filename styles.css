@@ -201,11 +201,13 @@ footer.footer {
 }
 .g-title, .c-title { font-weight: 600; color: var(--text); }
 .c-meta, .g-id { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.g-sub { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 
 /* Guia por canal */
 .ch-guide { margin: 14px 0; }
 .ch-guide .ch-name { margin: 0 0 4px; font-size: 15px; }
 .ch-name::before { content: '📺 '; }
+.ch-guide.focused { border: 1px solid var(--accent); border-radius: 10px; padding: 6px 8px; }
 
 /* ----- Parrilla ----- */
 .grid-wrap { position: relative; }

@@ -1,7 +1,7 @@
 // Helpers de renderizado del DOM (tarjetas de canal, modal, toasts).
 // Cálculo puro en epg.js/utils.js; nada aquí modifica estado global.
 
-import { fmtTime, fmtDay } from './utils.js';
+import { fmtTimeZ, fmtDayZ } from './utils.js';
 import { progress, minutesLeft, minutesUntil } from './epg.js';
 
 export function el(html) {
@@ -22,7 +22,7 @@ export function starSVG(filled, cls) {
 }
 
 function fmtRange(p) {
-  return `${fmtTime(new Date(Date.parse(p.start)))}–${fmtTime(new Date(Date.parse(p.end)))}`;
+  return `${fmtTimeZ(Date.parse(p.start))}–${fmtTimeZ(Date.parse(p.end))}`;
 }
 
 /** Marca-favorito con manejador delegado en [data-fav]. */
@@ -134,7 +134,7 @@ export function openModal(prog, channelName, isFav = false) {
   m.querySelector('.m-sub').textContent = prog.subtitle || '';
   m.querySelector('.m-meta').textContent = [
     channelName,
-    `${fmtDay(new Date(s))} ${fmtTime(new Date(s))}–${fmtTime(new Date(e))}`,
+    `${fmtDayZ(s)} ${fmtTimeZ(s)}–${fmtTimeZ(e)}`,
     `${dur} min`,
     prog.rating,
     prog.category,

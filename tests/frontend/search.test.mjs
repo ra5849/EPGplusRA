@@ -32,6 +32,21 @@ test('searchPrograms con consulta vacía no devuelve nada', () => {
   assert.deepEqual(searchPrograms([ENTRY(P('1', 'X', '', ''), '')], '   '), []);
 });
 
+test('searchPrograms encuentra por descripción', () => {
+  const entries = [ENTRY(P('1', 'El Padrino', '', 'Crónica de mafia siciliana'), 'CINEMANIA')];
+  const hits = searchPrograms(entries, 'mafia');
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].prog.id, '1');
+});
+
+test('searchPrograms encuentra por category_raw', () => {
+  const p = P('1', 'Título Neutro', '', '');
+  p.category_raw = 'Documental de naturaleza';
+  const entries = [ENTRY(p, '')];
+  const hits = searchPrograms(entries, 'naturaleza');
+  assert.equal(hits.length, 1);
+});
+
 test('searchChannels busca por nombre o id', () => {
   const channels = [
     { id: 'DAZN1', name: 'DAZN 1' },

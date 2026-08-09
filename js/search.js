@@ -5,7 +5,8 @@ import { tokenize } from './utils.js';
 
 const PESO_TITULO = 5;
 const PESO_SUBTITULO = 3;
-const PESO_DESCRIPCION = 1;
+const PESO_DESCRIPCION = 2;
+const PESO_CATEGORIA = 1;
 
 /** Precalcula los tokens de un programa (título, subtítulo, descripción, canal). */
 export function buildIndexEntry(p, channelName) {
@@ -14,6 +15,7 @@ export function buildIndexEntry(p, channelName) {
     titulo: tokenize(p.title),
     sub: tokenize(p.subtitle),
     desc: tokenize(p.description),
+    cat: tokenize(p.category_raw || p.category),
     canal: tokenize(channelName),
   };
 }
@@ -36,6 +38,7 @@ export function searchPrograms(entries, query, { limit = 50 } = {}) {
       if (match(e.titulo, token)) score += PESO_TITULO;
       if (match(e.sub, token)) score += PESO_SUBTITULO;
       if (match(e.desc, token)) score += PESO_DESCRIPCION;
+      if (match(e.cat, token)) score += PESO_CATEGORIA;
       if (match(e.canal, token)) score += 2;
     }
     if (score > 0) scored.push({ score, entry: e });
