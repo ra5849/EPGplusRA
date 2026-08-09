@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mi EPG · Guía de TV</title>
+  <meta name="description" content="Guía de programación de Movistar Plus+ (España): ahora, parrilla, favoritos, cine y deportes.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <img src="icons/icon-192.png" alt="" width="28" height="28" class="logo">
+      <span class="name">Mi EPG</span>
+    </div>
+    <nav id="nav" class="nav" aria-label="Secciones">
+      <button class="nav-btn" data-view="now">Ahora</button>
+      <button class="nav-btn" data-view="favoritos">Favoritos</button>
+      <button class="nav-btn" data-view="guia">Guía</button>
+      <button class="nav-btn" data-view="parrilla">Parrilla</button>
+      <button class="nav-btn" data-view="cine">Cine</button>
+      <button class="nav-btn" data-view="deportes">Deportes</button>
+      <button class="nav-btn" data-view="buscar">Buscar</button>
+      <button class="nav-btn" data-view="ajustes">Ajustes</button>
+    </nav>
+  </header>
+
+  <main id="app" aria-live="polite"></main>
+
+  <footer class="footer">
+    <span id="status">Actualizando…</span>
+  </footer>
+
+  <div id="modal" class="modal" hidden>
+    <button class="modal-close" data-close aria-label="Cerrar">×</button>
+    <div class="modal-body">
+      <h3 class="m-title"></h3>
+      <p class="m-sub"></p>
+      <p class="m-meta"></p>
+      <p class="m-desc"></p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status"></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

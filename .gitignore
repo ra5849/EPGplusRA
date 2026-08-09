@@ -1,0 +1,16 @@
+# Datos generados por el colector (no se versionan)
+data/
+node_modules/
+package-lock.json
+
+# Config secreta (sesiÃ³n OTT local)
+config/session.json
+config/session.local.json
+
+# Temporales
+__pycache__/
+*.pyc
+.env
+.DS_Store
+# Depuración del colector
+artifacts/

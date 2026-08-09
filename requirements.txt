@@ -1,0 +1,2 @@
+# El colector usa solo la biblioteca estándar de Python (>= 3.10).
+# Este fichero existe para el workflow de GitHub Actions.

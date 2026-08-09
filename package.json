@@ -1,0 +1,13 @@
+{
+  "name": "miegp-tests",
+  "private": true,
+  "type": "module",
+  "description": "Dependencias de desarrollo para tests e2e (Playwright/puppeteer-core). No se usa en producción.",
+  "scripts": {
+    "test:unit": "node --test tests/frontend/",
+    "test:e2e": "node tests/e2e/smoke.mjs"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^23.0.0"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "CodEventoRejilla": 174138514,
+  "ShowId": 64259921,
+  "Id": 2162178,
+  "TipoContenido": "Episodio",
+  "Titulo": "Viaje al centro de la tele: La noche temática",
+  "TituloSerie": "Viaje al centro de la tele: La noche temática",
+  "TituloEpisodio": "Visto como quiero",
+  "Temporada": "(T1)",
+  "GeneroComAntena": "Zapping",
+  "FechaHoraInicio": 1786137600000,
+  "FechaHoraFin": 1786140600000,
+  "Duracion": 50,
+  "Imagen": "https://estatico.emisiondof6.com/recorte/n/ywcatalogov/MTVET2162178",
+  "NivelMoral": {"_id": "01", "Id": "TP", "Logo": "https://voddelivery.emisiondof6.com/images/logos/logos_nivelmoral/tp.png"},
+  "Valoracion": 3.4,
+  "Estreno": false,
+  "ShowId": 64259921,
+  "Ficha": "https://ottcache.dof6.com/movistarplus/webplayer/contents/64259921/details?mediaType=FOTOV&profile=OTT&mode=U7D2&channels=TVE&version=8&tlsStream=true&mdrm=true&catalog=catchup&showNonRated=true"
+}
