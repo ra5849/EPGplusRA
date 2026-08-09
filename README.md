@@ -4,7 +4,7 @@ Aplicación web (PWA) sin dependencias que consulta la programación de
 Movistar Plus+ **sin autenticarse** y la muestra como guía de TV:
 en directo, parrilla, cine, deportes, búsqueda y favoritos.
 
-- **Colector**: Python 3.10+ (solo stdlib), `collector/`
+- **Colector**: Python 3.10+ (única dep: `requests`), `collector/`
 - **Frontend**: vanilla JS ESM, cero dependencias (PWA instalable), `js/`
 - **Datos**: generados por el colector y publicados por GitHub Actions en
   GitHub Pages cada día (06:10 UTC). Véase `.github/workflows/epg.yml`.

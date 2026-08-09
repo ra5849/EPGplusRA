@@ -19,7 +19,7 @@ GitHub Actions (06:10 UTC)            Navegador
 
 ## Colector (collector/)
 
-Sin dependencias externas (urllib + stdlib). Flujo resumido:
+Sin framework: cliente HTTP con `requests` (única dependencia) + stdlib. Flujo resumido:
 
 1. `config/channels.json` → IDs de canales (si falta, los descubre con `channels-list`).
 2. Sesión OTT: si existe `config/session.json` se reutiliza; si no, explora

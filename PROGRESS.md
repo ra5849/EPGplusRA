@@ -27,7 +27,7 @@ Fecha de inicio: 2026-08-08. Entorno: Windows 11, Python 3.12 en
 ## Decisiones tomadas (histórico)
 
 1. **Sin SPAs/build** — vanilla JS con módulos ESM, cero dependencias de npm. Node solo para `node --test`.
-2. **Artículo 1 "Sin dependencias"**: colector solo usa stdlib (urllib), iconos PNG generados con zlib/struct (tools/gen_icons.py).
+2. **Artículo 1 "Sin dependencias"**: frontend vanilla JS (ESM) sin npm; iconos PNG con zlib/struct (tools/gen_icons.py). El colector usa `requests` (única dep de terceros, ver `requirements.txt`) + stdlib.
 3. **No usar la API de endpoints individuales como fuente de programas** — sí se usan para logs y debug (`--dumps-ott json`).
 4. **Maíz de datos**: `data/channels.json`, `data/epg/<YYYY-MM-DD>.json` (particionado por día UTC, modo split), `data/epg-index.json`, `data/metadata.json`. Si el total estimado de programas <= `SINGLE_EPG_MAX_BYTES` (1.2 MB) se escribe `data/epg.json` de un solo archivo (modo single). Decisión: 3 días de historia + 7 días a futuro en cada ejecución del colector de oportunidades; los diarios ocultan ~1.3 MB/día (total ~11 MB), aceptable para GitHub Pages (sin gzip server-side).
 5. **Fecha/hora**: todos los timestamps ISO-8601 con offset (por defecto `+00:00`/Z de mover, el backend devuelve UTC); la UI los muestra en hora local del dispositivo.
