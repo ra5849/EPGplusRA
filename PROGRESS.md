@@ -15,14 +15,18 @@ Fecha de inicio: 2026-08-08. Entorno: Windows 11, Python 3.12 en
 | 5 | Persistencia JSON + metadatos | DONE |
 | 6 | Colector funcionando con datos reales | DONE |
 | 7 | Iconos PWA | DONE |
-| 8 | Núcleo JS puro + tests node | DONE (27/27) |
+| 8 | Núcleo JS puro + tests node | DONE (36/36) |
 | 9 | api.js + state.js | DONE |
 | 10 | ui.js, grid.js, app.js | DONE (imports verificados) |
 | 11 | index.html, styles.css, manifest.json, sw.js | DONE |
-| 12 | Verificación (tests + checklist local) | DONE — 27/27 unit + 10/10 e2e (Edge) |
-| 13 | Datos + GitHub Actions deploy | DONE — `.github/workflows/epg.yml` |
+| 12 | Verificación (tests + checklist local) | DONE — 36/36 unit + 25/25 e2e (Edge) |
+| 13 | Datos + GitHub Actions deploy | DONE — `epg.yml` (datos) + `deploy-fast.yml` (frontend) |
 | 14 | Documentación README/ARCHITECTURE | DONE |
 | 15 | Commit inicial + push al repo (manual) | DONE — repo `ra5849/EPGplusRA` público; Pages activo |
+| 16 | Parrilla estilo sincroguía | DONE — SW v5 |
+| 17 | Auto-scroll en antena + botón instalar PWA | DONE — SW v6 |
+| 18 | Fix bloques apilados en Parrilla (`left:0px`) | DONE — SW v7 |
+| 19 | Subtítulo/episodio en las listas + fix "Actualizando" | DONE — SW v8 |
 
 ## Decisiones tomadas (histórico)
 
@@ -63,19 +67,29 @@ python -m http.server 8080 --directory .
 - Búsqueda: índice por título/subtítulo/descripción/category_raw/canal. Solo el ~6% de programas tienen `description` (la ficha del proveedor casi no funciona anónimo); el 81% tiene `subtitle` (indexado).
 - Reloj de la UI: **fijo en Europe/Madrid** (`fmtTimeZ`, `fmtDayZ`, `zonedMinutes`), independiente del reloj del dispositivo. Resultado de canal en buscador → abre la Guía de ese canal (`data-guide`); resultado de programa → modal del evento.
 
+## Fases completadas
+
+- [x] FASE 1: entendimiento del problema y decisión de stack (vanilla JS ESM, cero dependencias npm).
+- [x] FASE 2: esqueleto repo + config.
+- [x] FASE 3: cliente OTT Movistar Plus+.
+- [x] FASE 4: calidad de datos (categorías, dedupe, campos).
+- [x] FASE 5: persistencia JSON + metadatos.
+- [x] FASE 6: colector funcionando con datos reales.
+- [x] FASE 7: iconos PWA.
+- [x] FASE 8: js/{utils,epg,search,storage}.js puros (sin DOM) + tests `node --test tests/frontend/` (36/36).
+- [x] FASE 9: js/api.js + js/state.js.
+- [x] FASE 10: js/ui.js, js/grid.js, js/app.js.
+- [x] FASE 11: index.html, styles.css, manifest.json, sw.js.
+- [x] FASE 12: verificación (node --test + e2e Edge + checklist).
+- [x] FASE 13: `.github/workflows/epg.yml` + `.gitignore` + `requirements.txt` (+ fix "Ahora" vacío de madrugada: filtrar por `current || next`). Se añadió después `deploy-fast.yml` para deploys de frontend en ~1 min.
+- [x] FASE 14: README.md + ARCHITECTURE.md.
+- [x] FASE 15: `git init -b main` + commit `2bff0ef` → repo público `ra5849/EPGplusRA`; Pages habilitado vía API (`{"build_type":"workflow"}`). Workflow `c2f5a7e`: collect OK (135 canales, 24 217 programas) + unit green + deploy Pages OK.
+- [x] FASE 16 (parrilla sincroguía): escala horaria fija 60 px/h, filas por canal, horas sticky, línea roja de la hora actual, scroll horizontal con inicio centrado en la hora actual (commit `53ba55f`, SW v5).
+- [x] FASE 17: Cine/Deportes auto-scroll al programa en antena (marca `is-now` + badge AHORA) y botón "Instalar app" (PWA) en Ajustes (commit `8634716`, SW v6).
+- [x] FASE 18 (fix bloques apilados `left:0px` en Parrilla): causa raíz = `clip()` devuelve `{s, e, visible}` pero `gridRows` desestructuraba `{start: s, end: e, visible}` → `s/e = undefined` → `leftPx = NaN` → guardas a 0px. Fix: desestructuración `{ s, e, visible }`. Refuerzos: `setDay` precalcula `startMs/endMs` (sin parsear en el render), `utils.js` usa aritmética pura (sin Intl en caliente) con `esUtcOffsetMin` por `longOffset` (el `shortOffset` devuelve `GMT+2` sin minutos y rompía el regex en Edge/Node). Commit `406de5a`, SW v7.
+- [x] FASE 19: subtítulo/episodio visible sin abrir el modal (`progSubtitle` = `T# Ep. #` + `subtitle`, fallback a año, máx. 80 chars) en Guía, Ahora, Cine, Deportes, Favoritos y Búsqueda; estilos `.subtitle`/`.c-sub`. Fix de regresión: faltaba declarar `const sub` en `scalarList` (ReferenceError → la app se quedaba en "Actualizando"). e2e ahora congela el reloj al día central de `data/epg/` (los datos locales caducan y el reloj real puede salirse del rango) y filtra los 404 de datos. Commit `d62cded`, SW v8.
+
 ## ToDo pendiente
 
 - [ ] Migrar actions heredadas (Node 20 → 24, checkout@v5) cuando estén disponibles.
 - [ ] Licencia (probable MIT).
-- [x] FASE 16 (parrilla sincroguía): escala horaria fija 60 px/h, filas por canal, horas sticky, línea roja de la hora actual, scroll horizontal con inicio centrado en la hora actual (commit `53ba55f`, SW v5).
-- [x] FASE 17: Cine/Deportes auto-scroll al programa en antena (marca `is-now` + badge AHORA) y botón "Instalar app" (PWA) en Ajustes (commit `8634716`, SW v6).
-- [x] FASE 18 (fix bloques apilados `left:0px` en Parrilla): causa raíz = `clip()` devuelve `{s, e, visible}` pero `gridRows` desestructuraba `{start: s, end: e, visible}` → `s/e = undefined` → `leftPx = NaN` → guardas a 0px. Fix: desestructuración `{ s, e, visible }`. Refuerzos: `setDay` precalcula `startMs/endMs` (sin parsear en el render), `utils.js` usa aritmética pura (sin Intl en caliente) con `esUtcOffsetMin` por `longOffset` (el `shortOffset` devuelve `GMT+2` sin minutos y rompía el regex en Edge/Node). Verificado: units 36/36, e2e 25/25 (bloques con posición real `moved=2923/2966`), SW v7.
-- [x] FASE 19: subtítulo/episodio visible sin abrir el modal (`progSubtitle` = `T# Ep. #` + `subtitle`, fallback a año, máx. 80 chars) en Guía, Ahora, Cine, Deportes, Favoritos y Búsqueda; estilos `.subtitle`/`.c-sub`. Fix de regresión: faltaba declarar `const sub` en `scalarList` (ReferenceError → la app se quedaba en "Actualizando"). e2e ahora congela el reloj al día central de `data/epg/` (los datos locales caducan y el reloj real puede salirse del rango) y filtra los 404 de datos. SW v8.
-- [x] FASE 9: js/api.js + js/state.js
-- [x] FASE 10: js/ui.js, js/grid.js, js/app.js
-- [x] FASE 11: index.html, styles.css, manifest.json, sw.js
-- [x] FASE 12: node --test + e2e Edge + checklist
-- [x] FASE 13: `.github/workflows/epg.yml` + `.gitignore` + `requirements.txt` (+fix "Ahora" vacío de madrugada: filtrar por `current || next`)
-- [x] FASE 14: README.md + ARCHITECTURE.md
-- [x] FASE 14: README.md + ARCHITECTURE.md
-- [x] FASE 15: `git init -b main` + commit `2bff0ef` (48 ficheros) → repo público `ra5849/EPGplusRA`, `gh repo create ... --push`; Pages habilitado vía API (`{"build_type":"workflow"}`). Fix CI: el colector necesita `requests` (requirements.txt). Workflow `c2f5a7e`: **collect 504 s (24 217 programas, 135 canales, anónimo) + unit green + deploy Pages OK** en https://ra5849.github.io/EPGplusRA/. Aviso: actions heredadas usan Node.js 20 (deprecado, forzado a 24) — migrar a checkout@v5 etc. cuando estén disponibles.
