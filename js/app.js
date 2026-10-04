@@ -290,8 +290,14 @@ function scalarList(list) {
     const p = list[i];
     const startMs = Date.parse(p.start);
     const endMs = Date.parse(p.end);
-    if (autoFocus < 0 && endMs > nowMs) autoFocus = i;
     const isNow = startMs <= nowMs && nowMs < endMs;
+    const durMs = endMs - startMs;
+    const elapsedMs = nowMs - startMs;
+    // Evitar saltar al inicio de bloques muy largos ya empezados hace tiempo
+    const isLongOngoing = isNow && durMs > 4 * 60 * 60 * 1000 && elapsedMs > 90 * 60 * 1000;
+    if (autoFocus < 0 && endMs > nowMs && !isLongOngoing) {
+      autoFocus = i;
+    }
     const sub = progSubtitle(p);
     wrap.append(el(`
       <button class="row-cat${isNow ? ' is-now' : ''}" data-open="${esc(p.id)}">
@@ -302,8 +308,16 @@ function scalarList(list) {
         <span class="c-meta">${esc(channelName(p.channel_id))} · ${esc(p.category_raw || p.category || '')}</span>
       </button>`));
   }
+  // Si no hemos encontrado foco (bloque largo en marcha), buscar el siguiente que empiece > ahora
+  if (autoFocus < 0) {
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      const startMs = Date.parse(p.start);
+      if (startMs > nowMs) { autoFocus = i; break; }
+    }
+  }
   root.append(wrap);
-  // Coloca la vista en el programa en antena o el siguiente (hora actual de Madrid).
+  // Coloca la vista en el programa en antena (con criterio anti-bloques largos) o en el siguiente inicio
   requestAnimationFrame(() => {
     const rows = wrap.querySelectorAll('.row-cat');
     const target = rows[autoFocus < 0 ? 0 : autoFocus];
