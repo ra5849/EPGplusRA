@@ -294,7 +294,7 @@ function scalarList(list) {
     const durMs = endMs - startMs;
     const elapsedMs = nowMs - startMs;
     // Evitar saltar al inicio de bloques muy largos ya empezados hace tiempo
-    const isLongOngoing = isNow && durMs > 4 * 60 * 60 * 1000 && elapsedMs > 90 * 60 * 1000;
+    const isLongOngoing = isNow && durMs > 3 * 60 * 60 * 1000 && elapsedMs > 60 * 60 * 1000;
     if (autoFocus < 0 && endMs > nowMs && !isLongOngoing) {
       autoFocus = i;
     }
@@ -308,16 +308,25 @@ function scalarList(list) {
         <span class="c-meta">${esc(channelName(p.channel_id))} · ${esc(p.category_raw || p.category || '')}</span>
       </button>`));
   }
-  // Si no hemos encontrado foco (bloque largo en marcha), buscar el siguiente que empiece > ahora
+  // Si no hemos encontrado foco, buscar el siguiente que empiece > ahora (solo si está relativamente cerca)
   if (autoFocus < 0) {
     for (let i = 0; i < list.length; i++) {
       const p = list[i];
       const startMs = Date.parse(p.start);
-      if (startMs > nowMs) { autoFocus = i; break; }
+      if (startMs > nowMs && (startMs - nowMs) < 120 * 60 * 1000) { autoFocus = i; break; }
+    }
+  }
+  // Si aún no hay foco (ej. bloque en marcha sin siguiente), centrarnos en el programa en antena si existe
+  if (autoFocus < 0) {
+    for (let i = 0; i < list.length; i++) {
+      const p = list[i];
+      const startMs = Date.parse(p.start);
+      const endMs = Date.parse(p.end);
+      if (startMs <= nowMs && nowMs < endMs) { autoFocus = i; break; }
     }
   }
   root.append(wrap);
-  // Coloca la vista en el programa en antena (con criterio anti-bloques largos) o en el siguiente inicio
+  // Coloca la vista en el foco (ahora/ya iniciada o siguiente inicio)
   requestAnimationFrame(() => {
     const rows = wrap.querySelectorAll('.row-cat');
     const target = rows[autoFocus < 0 ? 0 : autoFocus];
