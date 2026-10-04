@@ -59,3 +59,8 @@ index.html, styles.css, manifest.json, sw.js   PWA
 - Los datos son de fuente pública de Movistar Plus+; revisa su uso con tu operador.
 
 Vé `ARCHITECTURE.md` para el diseño y `PROGRESS.md` para el historial de desarrollo.
+
+## Licencia
+
+MIT — ver [`LICENSE`](LICENSE). Los datos del EPG provienen de una fuente pública de
+Movistar Plus+; la licencia cubre el código, no los datos.

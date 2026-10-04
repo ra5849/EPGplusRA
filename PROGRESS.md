@@ -27,6 +27,8 @@ Fecha de inicio: 2026-08-08. Entorno: Windows 11, Python 3.12 en
 | 17 | Auto-scroll en antena + botón instalar PWA | DONE — SW v6 |
 | 18 | Fix bloques apilados en Parrilla (`left:0px`) | DONE — SW v7 |
 | 19 | Subtítulo/episodio en las listas + fix "Actualizando" | DONE — SW v8 |
+| 20 | GitHub Actions migradas a las últimas versiones | DONE |
+| 21 | Licencia MIT + sección en README | DONE |
 
 ## Decisiones tomadas (histórico)
 
@@ -89,7 +91,9 @@ python -m http.server 8080 --directory .
 - [x] FASE 18 (fix bloques apilados `left:0px` en Parrilla): causa raíz = `clip()` devuelve `{s, e, visible}` pero `gridRows` desestructuraba `{start: s, end: e, visible}` → `s/e = undefined` → `leftPx = NaN` → guardas a 0px. Fix: desestructuración `{ s, e, visible }`. Refuerzos: `setDay` precalcula `startMs/endMs` (sin parsear en el render), `utils.js` usa aritmética pura (sin Intl en caliente) con `esUtcOffsetMin` por `longOffset` (el `shortOffset` devuelve `GMT+2` sin minutos y rompía el regex en Edge/Node). Commit `406de5a`, SW v7.
 - [x] FASE 19: subtítulo/episodio visible sin abrir el modal (`progSubtitle` = `T# Ep. #` + `subtitle`, fallback a año, máx. 80 chars) en Guía, Ahora, Cine, Deportes, Favoritos y Búsqueda; estilos `.subtitle`/`.c-sub`. Fix de regresión: faltaba declarar `const sub` en `scalarList` (ReferenceError → la app se quedaba en "Actualizando"). e2e ahora congela el reloj al día central de `data/epg/` (los datos locales caducan y el reloj real puede salirse del rango) y filtra los 404 de datos. Commit `d62cded`, SW v8.
 
+- [x] FASE 20: GitHub Actions actualizadas a las últimas versiones mayores (`checkout@v7`, `setup-node@v7`, `setup-python@v7`, `cache@v6`, `upload-artifact@v7`, `download-artifact@v8`, `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`). YAML validado con PyYAML y verificado que no se alteró nada más del fichero.
+- [x] FASE 21: licencia MIT (`LICENSE`) + sección "Licencia" en el README (el código es MIT; los datos del EPG no).
+
 ## ToDo pendiente
 
-- [ ] Migrar actions heredadas (Node 20 → 24, checkout@v5) cuando estén disponibles.
-- [ ] Licencia (probable MIT).
+- (sin pendientes)
