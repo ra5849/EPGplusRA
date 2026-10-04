@@ -202,6 +202,18 @@ footer.footer {
 .g-title, .c-title { font-weight: 600; color: var(--text); }
 .c-meta, .g-id { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
 .g-sub { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.row .subtitle,
+.card .subtitle,
+.c-sub {
+  display: block;
+  font-size: 0.92rem;
+  color: var(--muted);
+  line-height: 1.25;
+  margin-top: 0.1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .badge-now {
   display: inline-block;
   margin-left: 6px;

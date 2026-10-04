@@ -108,6 +108,18 @@ function channelName(id) {
   return c ? c.name : id;
 }
 
+function progSubtitle(p) {
+  const parts = [];
+  if (p.season != null && p.episode != null) {
+    parts.push(`T${p.season} Ep. ${p.episode}`);
+  }
+  if (p.subtitle) parts.push(p.subtitle);
+  if (parts.length === 0 && p.year != null) parts.push(String(p.year));
+  let s = parts.join(' — ');
+  if (s.length > 80) s = s.slice(0, 77) + '…';
+  return s;
+}
+
 async function setDay(key) {
   const start = madridMidnightMs(key);
   const end = start + DAY;
@@ -203,10 +215,11 @@ function viewGuia() {
     </section>`);
     const box = sec.querySelector('.ch-guide-items');
     for (const p of list) {
-      box.append(el(`<button class="row-guide" data-open="${esc(p.id)}">
-        <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
-        <span class="g-title">${esc(p.title)}</span>
-      </button>`));
+        box.append(el(`<button class="row-guide" data-open="${esc(p.id)}">
+          <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
+          <span class="g-title">${esc(p.title)}</span>
+          ${progSubtitle(p) ? `<span class="g-sub">${esc(progSubtitle(p))}</span>` : ''}
+        </button>`));
     }
     wrap.append(sec);
     if (++n >= 40) break;
@@ -283,6 +296,7 @@ function scalarList(list) {
       <button class="row-cat${isNow ? ' is-now' : ''}" data-open="${esc(p.id)}">
         <span class="time">${fmtTimeZ(startMs)}</span>
         <span class="c-title">${esc(p.title)}</span>
+        ${sub ? `<span class="c-sub">${esc(sub)}</span>` : ''}
         ${isNow ? '<span class="badge-now">AHORA</span>' : ''}
         <span class="c-meta">${esc(channelName(p.channel_id))} · ${esc(p.category_raw || p.category || '')}</span>
       </button>`));
@@ -323,11 +337,12 @@ function viewBuscar() {
       results.append(el('<div class="sec">Programas</div>'));
       for (const h of hits) {
         const p = h.prog;
+        const sub = progSubtitle(p);
         results.append(el(`<button class="row-search" data-open="${esc(p.id)}">
           <span class="time">${fmtTimeZ(Date.parse(p.start))}</span>
           <span class="g-title">${esc(p.title)}</span>
           <span class="g-id">${esc(channelName(p.channel_id))}</span>
-          ${p.subtitle ? `<span class="g-sub">${esc(p.subtitle)}</span>` : ''}
+          ${sub ? `<span class="g-sub">${esc(sub)}</span>` : ''}
         </button>`));
       }
     }
