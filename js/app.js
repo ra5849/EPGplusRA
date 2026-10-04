@@ -292,6 +292,7 @@ function scalarList(list) {
     const endMs = Date.parse(p.end);
     if (autoFocus < 0 && endMs > nowMs) autoFocus = i;
     const isNow = startMs <= nowMs && nowMs < endMs;
+    const sub = progSubtitle(p);
     wrap.append(el(`
       <button class="row-cat${isNow ? ' is-now' : ''}" data-open="${esc(p.id)}">
         <span class="time">${fmtTimeZ(startMs)}</span>
