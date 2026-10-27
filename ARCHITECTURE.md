@@ -50,7 +50,8 @@ Sin framework: cliente HTTP con `requests` (única dependencia) + stdlib. Flujo 
 // channels.json
 { "channels": [ { "id": "TVE", "name": "La 1", "number": 1, ... } ] }
 
-// data/epg/2026-08-08.json  (un fichero por día, clave UTC)
+// data/epg/2026-08-08.json  (un fichero por día civil de Madrid; la clave es
+//                            la fecha en Europe/Madrid, no la fecha UTC)
 { "timezone": "Europe/Madrid",
   "programs": [ {
     "id", "channel_id", "title", "subtitle", "description",
@@ -99,3 +100,18 @@ Requisito en el repo: *Settings → Pages → Source: GitHub Actions*.
 - Sin credenciales: el público anónimo de la fuente permite EPG sin login.
 - Datos versionados aparte (`.gitignore` sobre `data/`) y publicados solo vía CI.
 - Partición por días para servir payloads pequeños y cachables.
+
+## Horario de verano (DST)
+
+- El offset de Madrid se resuelve **por instante** y se cachea por hora
+  (`esUtcOffsetMin`), así que una sesión abierta a caballo del cambio o que
+  muestra días de verano e invierno no mezcla offsets.
+- La ventana de cada día va de medianoche civil a medianoche civil
+  (`madridMidnightMs` + `addDaysKey`), no de `inicio + 24 h`: el día del cambio
+  dura 25 h en octubre y 23 h en marzo.
+- Limitación conocida: la parrilla dibuja 24 columnas, así que en el día de
+  octubre la hora repetida (02:00–03:00) se solapa en la misma columna.
+  Es cosmético y solo afecta a esa madrugada.
+- El **arranque** tiene vigilante (`index.html`): si el módulo no puede
+  ejecutarse (navegador antiguo, error o red colgada) se muestra un aviso con
+  «Reintentar» y «Borrar caché», en vez de quedarse en «Actualizando…».

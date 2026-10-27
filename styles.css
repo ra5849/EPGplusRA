@@ -125,7 +125,27 @@ footer.footer {
   padding: 40px 10px;
 }
 .muted { color: var(--muted); font-size: 13px; }
+.small { font-size: 12px; }
 .sec { color: var(--accent); font-weight: 700; margin: 16px 2px 8px; font-size: 14px; text-transform: uppercase; letter-spacing: .4px; }
+
+/* Aviso de arranque fallido (ver vigilante en index.html) */
+.boot-error { padding: 28px 16px; text-align: center; }
+.boot-error h2 { margin: 0 0 10px; font-size: 18px; }
+.boot-error p { margin: 0 0 14px; line-height: 1.45; }
+.boot-error button {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin: 8px auto;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #30363d);
+  background: var(--card, #161b22);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+.boot-error button:hover { border-color: var(--accent); }
 
 /* ----- Tarjetas "Ahora" ----- */
 .channel-block {

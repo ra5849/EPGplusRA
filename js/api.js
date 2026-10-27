@@ -4,17 +4,26 @@
 
 const NOT_FOUND = '__not_found__';
 
-export async function loadJSON(url, { signal } = {}) {
+export async function loadJSON(url, { signal, timeoutMs = 12000 } = {}) {
+  // Sin tiempo máximo, una petición colgada dejaba la app en «Actualizando…».
+  const ctrl = typeof AbortController === 'function' ? new AbortController() : null;
+  const timer = ctrl ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
+  const onAbort = () => { if (ctrl) ctrl.abort(); };
+  const hasSignal = signal && typeof signal.addEventListener === 'function';
+  if (hasSignal && ctrl) signal.addEventListener('abort', onAbort);
   try {
-    const res = await fetch(url, { signal, cache: 'no-store' });
+    const res = await fetch(url, { signal: ctrl ? ctrl.signal : signal, cache: 'no-store' });
     if (!res.ok) {
       if (res.status === 404) throw new Error(NOT_FOUND);
       throw new Error(`HTTP ${res.status}`);
     }
     return await res.json();
   } catch (err) {
-    if (err.name === 'AbortError') throw err;
+    if (err && err.name === 'AbortError' && signal && signal.aborted) throw err;
     throw new Error(NOT_FOUND);
+  } finally {
+    if (timer) clearTimeout(timer);
+    if (hasSignal && ctrl) signal.removeEventListener('abort', onAbort);
   }
 }
 

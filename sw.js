@@ -1,5 +1,5 @@
 /* Service worker de Mi EPG: precache de la app y red-primero para los datos. */
-const VERSION = 'v8';
+const VERSION = 'v9';
 const CORE_CACHE = `miegp-core-${VERSION}`;
 const DATA_CACHE = `miegp-data-${VERSION}`;
 
@@ -26,7 +26,11 @@ const CORE_ASSETS = [
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CORE_CACHE).then((cache) => cache.addAll(CORE_ASSETS)).then(() => self.skipWaiting()),
+    // addAll aborta TODO el precache si un solo recurso falla (y entonces el SW
+    // nuevo nunca se activa). Con allSettled, un fallo no bloquea la actualización.
+    caches.open(CORE_CACHE)
+      .then((cache) => Promise.allSettled(CORE_ASSETS.map((u) => cache.add(u))))
+      .then(() => self.skipWaiting()),
   );
 });
 
@@ -53,6 +57,21 @@ self.addEventListener('fetch', (event) => {
           return res;
         })
         .catch(() => caches.match(event.request).then((hit) => hit || Response.error())),
+    );
+    return;
+  }
+
+  // Navegación (el propio index.html): red primero. Con caché primero, un deploy
+  // nuevo no llegaba a quien tuviera el shell antiguo cacheado.
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((res) => {
+          const copy = res.clone();
+          if (res.ok) caches.open(CORE_CACHE).then((c) => c.put(event.request, copy));
+          return res;
+        })
+        .catch(() => caches.match(event.request).then((hit) => hit || caches.match('./index.html'))),
     );
     return;
   }

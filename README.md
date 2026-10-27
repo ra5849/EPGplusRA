@@ -57,6 +57,9 @@ index.html, styles.css, manifest.json, sw.js   PWA
   también funciona el modo monofichero `data/epg.json` si el total es <= 1.2 MB.
 - La búsqueda indexa el día cargado (día actual); la parrilla permite elegir día.
 - Los datos son de fuente pública de Movistar Plus+; revisa su uso con tu operador.
+- Cambio de hora: la app trabaja con la hora civil de Madrid por instante. En el
+  día que dura 25 h, la hora repetida (02:00–03:00) se solapa en la parrilla;
+  es cosmético y solo pasa esa madrugada.
 
 Vé `ARCHITECTURE.md` para el diseño y `PROGRESS.md` para el historial de desarrollo.
 

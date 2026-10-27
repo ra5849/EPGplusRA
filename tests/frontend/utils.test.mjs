@@ -1,6 +1,6 @@
 ﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import { normalize, tokenize, pad2, clamp, fmtDur, fmtTime, relTime, tzOffsetMs, madridMidnightMs, madridDayKey, fmtTimeZ, fmtDayZ, zonedMinutes } from '../../js/utils.js';
+import { normalize, tokenize, pad2, clamp, fmtDur, fmtTime, relTime, tzOffsetMs, madridMidnightMs, madridDayKey, fmtTimeZ, fmtDayZ, zonedMinutes, addDaysKey, HOUR } from '../../js/utils.js';
 
 test('normalize quita acentos y pasa a minúsculas', () => {
   assert.equal(normalize('Película de Acción'), 'pelicula de accion');
@@ -61,4 +61,37 @@ test('fmtTimeZ/fmtDayZ muestran hora de España, no la del dispositivo', () => {
 
 test('zonedMinutes coloca un evento en su minuto del día civil español', () => {
   assert.equal(zonedMinutes('2026-08-08T21:15:00+00:00'), 23 * 60 + 15); // 23:15 Madrid
+});
+
+// --- cambio de hora (DST): regresiones reales ---
+
+test('el offset no se congela: verano e invierno dan la hora correcta en la misma sesión', () => {
+  // El orden importa: antes bastaba formatear primero una fecha de verano para
+  // que TODA la sesión (también el invierno) usara +02:00.
+  assert.equal(fmtTimeZ(Date.parse('2026-01-15T20:00:00+01:00')), '20:00');
+  assert.equal(fmtTimeZ(Date.parse('2026-08-08T20:00:00+02:00')), '20:00');
+  assert.equal(fmtTimeZ(Date.parse('2026-10-24T20:00:00+02:00')), '20:00'); // aún verano
+  assert.equal(fmtTimeZ(Date.parse('2026-10-28T20:00:00+01:00')), '20:00'); // ya invierno
+  assert.equal(zonedMinutes('2026-10-24T20:00:00+02:00'), 20 * 60);
+  assert.equal(zonedMinutes('2026-10-28T20:00:00+01:00'), 20 * 60);
+  assert.equal(fmtDayZ(Date.parse('2026-10-24T22:30:00+00:00')), 'dom 25 oct');
+  assert.equal(fmtDayZ(Date.parse('2026-10-28T23:30:00+00:00')), 'jue 29 oct'); // 00:30 CET
+});
+
+test('el día del cambio de hora dura 25 h en octubre y 23 h en marzo', () => {
+  const oct = madridMidnightMs('2026-10-25');
+  assert.equal(madridMidnightMs(addDaysKey('2026-10-25', 1)) - oct, 25 * HOUR);
+  const mar = madridMidnightMs('2026-03-29');
+  assert.equal(madridMidnightMs(addDaysKey('2026-03-29', 1)) - mar, 23 * HOUR);
+  // Un día normal son 24 h.
+  assert.equal(madridMidnightMs(addDaysKey('2026-10-20', 1)) - madridMidnightMs('2026-10-20'), 24 * HOUR);
+});
+
+test('addDaysKey suma días civiles sin desviarse por el cambio de hora', () => {
+  assert.equal(addDaysKey('2026-10-24', 1), '2026-10-25');
+  assert.equal(addDaysKey('2026-10-25', 1), '2026-10-26');
+  assert.equal(addDaysKey('2026-10-31', 1), '2026-11-01');
+  assert.equal(addDaysKey('2026-12-31', 1), '2027-01-01');
+  assert.equal(addDaysKey('2026-03-28', 1), '2026-03-29');
+  assert.equal(addDaysKey('2026-03-29', 1), '2026-03-30');
 });

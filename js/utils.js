@@ -106,25 +106,33 @@ export function upperFirst(s) {
 export const TZ_ES = 'Europe/Madrid';
 const TZ_CACHE = new Map();
 
-/** Offset UTC (ms) vigente en Europe/Madrid en el instante dado; DST-aware. */
-export function tzOffsetMs(tz = TZ_ES, at = Date.now()) {
-  const key = `${tz}:${new Date(at).toISOString().slice(0, 13)}`;
-  let off = TZ_CACHE.get(key);
-  if (off !== undefined) return off;
+/**
+ * Offset UTC (ms) de una zona en un instante, o `null` si el navegador no puede
+ * resolverlo (Intl ausente o sin `longOffset`).
+ */
+function readOffsetMs(tz, at) {
   try {
     const part = new Intl.DateTimeFormat('en-GB', { timeZone: tz, timeZoneName: 'longOffset' })
       .formatToParts(new Date(at))
       .find((p) => p.type === 'timeZoneName');
     const m = /GMT([+-]\d{2}:\d{2})?/.exec(part ? part.value : '');
-    if (!m || !m[1]) off = 0;
-    else {
-      const neg = m[1][0] === '-' ? -1 : 1;
-      const [h, min] = m[1].slice(1).split(':').map(Number);
-      off = neg * (h * 3600 + min * 60) * 1000;
-    }
+    if (!m) return null;
+    if (!m[1]) return 0;
+    const neg = m[1][0] === '-' ? -1 : 1;
+    const [h, min] = m[1].slice(1).split(':').map(Number);
+    return neg * (h * 3600 + min * 60) * 1000;
   } catch {
-    off = 0;
+    return null;
   }
+}
+
+/** Offset UTC (ms) vigente en Europe/Madrid en el instante dado; DST-aware. */
+export function tzOffsetMs(tz = TZ_ES, at = Date.now()) {
+  const key = `${tz}:${new Date(at).toISOString().slice(0, 13)}`;
+  let off = TZ_CACHE.get(key);
+  if (off !== undefined) return off;
+  const parsed = readOffsetMs(tz, at);
+  off = parsed === null ? 0 : parsed;
   TZ_CACHE.set(key, off);
   return off;
 }
@@ -155,31 +163,33 @@ export function madridToday() {
   return madridDayKey(Date.now());
 }
 
+/**
+ * Suma `n` días a una clave civil YYYY-MM-DD de forma segura: se parte del
+ * mediodía UTC, que nunca cae al otro lado del cambio de hora.
+ */
+export function addDaysKey(key, n = 1) {
+  const t = Date.parse(`${key}T12:00:00Z`);
+  if (!Number.isFinite(t)) return key;
+  return utcDayKey(new Date(t + n * DAY));
+}
+
 // --- formateo de fecha/hora FIJO en Europe/Madrid ---
-// Aritmética pura (sin Intl en caliente): robusta y sin NaN en cualquier navegador.
-// El offset de Madrid se calcula una vez (DST-aware) con fallback al offset del dispositivo.
+// Aritmética pura (sin Intl en el bucle caliente). El offset se resuelve POR
+// INSTANTE y se cachea por hora: el cambio de hora no contamina otras fechas.
 
-let esOffsetMin = null;
+const OFFSET_MIN_CACHE = new Map();
 
+/** Offset de Madrid en minutos para ESE instante (DST-aware, nunca NaN). */
 function esUtcOffsetMin(ms) {
-  if (esOffsetMin === null) {
-    try {
-      const part = new Intl.DateTimeFormat('en-GB', { timeZone: TZ_ES, timeZoneName: 'longOffset' })
-        .formatToParts(new Date(ms))
-        .find((p) => p.type === 'timeZoneName');
-      const m = /GMT([+-]\d{2}:\d{2})?/.exec(part ? part.value : '');
-      if (m && m[1]) {
-        const neg = m[1][0] === '-' ? -1 : 1;
-        const [h, min] = m[1].slice(1).split(':').map(Number);
-        esOffsetMin = neg * (h * 60 + min);
-      } else {
-        esOffsetMin = -new Date(ms).getTimezoneOffset();
-      }
-    } catch {
-      esOffsetMin = -new Date(ms).getTimezoneOffset();
-    }
-  }
-  return esOffsetMin;
+  const at = Number.isFinite(ms) ? ms : Date.now();
+  const key = Math.floor(at / HOUR);
+  const hit = OFFSET_MIN_CACHE.get(key);
+  if (hit !== undefined) return hit;
+  const parsedMs = readOffsetMs(TZ_ES, at);
+  // Sin Intl utilizable: último recurso, el huso del dispositivo.
+  const off = parsedMs === null ? -new Date(at).getTimezoneOffset() : parsedMs / 60000;
+  OFFSET_MIN_CACHE.set(key, off);
+  return off;
 }
 
 /** Minutos dentro del día civil (zona España) de un instante (ms o ISO). Nunca NaN. */

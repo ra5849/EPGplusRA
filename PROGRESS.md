@@ -29,6 +29,8 @@ Fecha de inicio: 2026-08-08. Entorno: Windows 11, Python 3.12 en
 | 19 | Subtítulo/episodio en las listas + fix "Actualizando" | DONE — SW v8 |
 | 20 | GitHub Actions migradas a las últimas versiones | DONE |
 | 21 | Licencia MIT + sección en README | DONE |
+| 22 | Cambio de hora: offset por instante y día civil de 23/25 h | DONE — SW v9, tests 39/39 |
+| 23 | Arranque robusto (aviso + reintento, timeouts, SW) | DONE — e2e 25/25 |
 
 ## Decisiones tomadas (histórico)
 
@@ -93,6 +95,10 @@ python -m http.server 8080 --directory .
 
 - [x] FASE 20: GitHub Actions actualizadas a las últimas versiones mayores (`checkout@v7`, `setup-node@v7`, `setup-python@v7`, `cache@v6`, `upload-artifact@v7`, `download-artifact@v8`, `configure-pages@v6`, `upload-pages-artifact@v5`, `deploy-pages@v5`). YAML validado con PyYAML y verificado que no se alteró nada más del fichero.
 - [x] FASE 21: licencia MIT (`LICENSE`) + sección "Licencia" en el README (el código es MIT; los datos del EPG no).
+
+- [x] FASE 22 (cambio de hora): el offset de Madrid se congelaba en el primer formateo de la sesión (`esOffsetMin` global) → los días al otro lado del cambio salían 1 h desplazados (24-oct 20:00 se veía como 19:00). Ahora se resuelve **por instante** con caché por hora. Además el día se cierra con `madridMidnightMs(día+1)` (`addDaysKey`), no `+24 h`: el 25-oct dura 25 h y se perdían 201 programas de su última hora. Tests nuevos: 39/39.
+- [x] FASE 23 (arranque robusto): en algunos navegadores la app se quedaba en «Actualizando…» para siempre. Causas cubiertas: `localStorage` que lanza (modo privado/webview) tumbaba `boot()`; peticiones sin tiempo máximo; `cache.addAll` del SW que no actualizaba si fallaba un recurso; shell cacheado en navegaciones. Añadido vigilante clásico en `index.html` (funciona aunque el módulo no parsee) con «Reintentar» y «Borrar caché», timeout de 12 s en `loadJSON`, almacenamiento con respaldo en memoria, SW v9 con navegación red-primero y precache tolerante a fallos. e2e 25/25.
+- Conocido: en el día de 25 h la hora repetida (02:00–03:00) se solapa en la parrilla; cosmético, solo esa madrugada.
 
 ## ToDo pendiente
 

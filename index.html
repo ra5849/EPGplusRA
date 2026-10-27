@@ -49,6 +49,68 @@
 
   <div id="toast" class="toast" role="status"></div>
 
+  <script>
+    // Vigilante de arranque. Es un script clásico a propósito: se ejecuta incluso
+    // en navegadores que no pueden interpretar los módulos (o si un módulo falla),
+    // casos en los que antes la página se quedaba en «Actualizando…» para siempre.
+    window.__EPG_OK = false;
+    window.__epgFail = function (err) {
+      if (window.__EPG_OK) return;
+      var app = document.getElementById('app');
+      var status = document.getElementById('status');
+      if (status) status.textContent = 'Error al cargar';
+      if (!app) return;
+      app.textContent = '';
+      var box = document.createElement('div');
+      box.className = 'boot-error';
+      var h = document.createElement('h2');
+      h.textContent = 'No se pudo cargar la guía';
+      var p = document.createElement('p');
+      p.textContent = 'La app no ha terminado de arrancar. Puede ser la conexión, la caché del navegador o que el navegador sea demasiado antiguo.';
+      var detalle = document.createElement('p');
+      detalle.className = 'muted small';
+      detalle.textContent = err && err.message ? String(err.message) : '';
+      var retry = document.createElement('button');
+      retry.type = 'button';
+      retry.textContent = 'Reintentar';
+      retry.addEventListener('click', function () { location.reload(); });
+      var reset = document.createElement('button');
+      reset.type = 'button';
+      reset.textContent = 'Borrar caché y recargar';
+      reset.addEventListener('click', function () {
+        var jobs = [];
+        try {
+          if ('serviceWorker' in navigator) {
+            jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+              return Promise.all(rs.map(function (r) { return r.unregister(); }));
+            }));
+          }
+        } catch (e) {}
+        try {
+          if (window.caches) jobs.push(caches.keys().then(function (ks) {
+            return Promise.all(ks.map(function (k) { return caches.delete(k); }));
+          }));
+        } catch (e) {}
+        Promise.all(jobs).then(function () {
+          location.replace(location.pathname + '?v=' + Date.now() + location.hash);
+        }, function () { location.reload(); });
+      });
+      box.appendChild(h);
+      box.appendChild(p);
+      box.appendChild(retry);
+      box.appendChild(reset);
+      box.appendChild(detalle);
+      app.appendChild(box);
+      if (err) console.error('EPG:', err);
+    };
+    setTimeout(function () {
+      if (!window.__EPG_OK) window.__epgFail(new Error('El arranque ha tardado demasiado (8 s).'));
+    }, 8000);
+    window.addEventListener('unhandledrejection', function (e) { window.__epgFail(e.reason); });
+  </script>
+  <noscript>
+    <p class="boot-error">Esta guía necesita JavaScript. Actívalo en el navegador para ver la programación.</p>
+  </noscript>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

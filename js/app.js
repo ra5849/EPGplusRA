@@ -6,7 +6,7 @@ import { esc, el, toast, favButton, openModal, closeModal, renderNowView, render
 import { renderGrid, gridRows } from './grid.js';
 import { searchPrograms, searchChannels, buildIndexEntry } from './search.js';
 import { nowNextByChannel, filteredBy, groupByChannel, programsInWindow } from './epg.js';
-import { fmtTimeZ, fmtDayZ, utcDayKey, DAY, madridMidnightMs, madridDayKey, madridToday } from './utils.js';
+import { fmtTimeZ, fmtDayZ, utcDayKey, DAY, madridMidnightMs, madridDayKey, madridToday, addDaysKey } from './utils.js';
 import {
   getFavorites, toggleFavorite, getTheme, setTheme, getStartView, setStartView,
 } from './storage.js';
@@ -24,6 +24,7 @@ const store = createStore({
   entries: [],
   day: '',
   dayStart: NaN,
+  dayEnd: NaN,
   days: [],
   favorites: [],
   theme: 'dark',
@@ -31,9 +32,16 @@ const store = createStore({
   metadata: null,
 });
 
+// localStorage puede lanzar SecurityError (modo privado, cookies bloqueadas,
+// webviews). Sin esta red de seguridad la app se quedaba en «Actualizando…».
+const memStore = new Map();
 const storage = {
-  get: (k) => localStorage.getItem(k),
-  set: (k, v) => localStorage.setItem(k, v),
+  get: (k) => {
+    try { return localStorage.getItem(k); } catch { return memStore.has(k) ? memStore.get(k) : null; }
+  },
+  set: (k, v) => {
+    try { localStorage.setItem(k, v); } catch { memStore.set(k, v); }
+  },
 };
 
 let root;
@@ -76,6 +84,7 @@ export async function boot() {
   setView(hashView() ?? getStartView(storage));
   registerSW();
   updateStatus();
+  window.__EPG_OK = true;
 
   tick(() => {
     if (store.get('view') === 'now') render();
@@ -122,8 +131,9 @@ function progSubtitle(p) {
 
 async function setDay(key) {
   const start = madridMidnightMs(key);
-  const end = start + DAY;
-  store.set({ day: key, dayStart: start });
+  // Fin real del día civil: 23 h o 25 h en los cambios de hora, no siempre 24.
+  const end = madridMidnightMs(addDaysKey(key, 1));
+  store.set({ day: key, dayStart: start, dayEnd: end });
   const f1 = utcDayKey(new Date(start));
   const f2 = utcDayKey(new Date(end - 1));
   const [a, b] = await Promise.all([fetchDay(f1), fetchDay(f2)]);
@@ -265,15 +275,15 @@ function viewParrilla() {
 }
 
 function viewCine() {
-  const { programs, day, dayStart } = store.get();
-  const list = filteredBy('movie', programs, dayStart, dayStart + DAY);
+  const { programs, day, dayStart, dayEnd } = store.get();
+  const list = filteredBy('movie', programs, dayStart, dayEnd);
   root.append(el(`<h2 class="vh">Películas · ${esc(day)}</h2>`));
   scalarList(list);
 }
 
 function viewDeportes() {
-  const { programs, day, dayStart } = store.get();
-  const list = filteredBy('sport', programs, dayStart, dayStart + DAY);
+  const { programs, day, dayStart, dayEnd } = store.get();
+  const list = filteredBy('sport', programs, dayStart, dayEnd);
   root.append(el(`<h2 class="vh">Deportes · ${esc(day)}</h2>`));
   scalarList(list);
 }
@@ -469,4 +479,7 @@ function bindGlobal() {
 
 boot().catch((err) => {
   console.error(err);
+  // Nunca dejamos la pantalla muda en «Actualizando…»: avisamos y ofrecemos reintentar.
+  started = false;
+  if (typeof window.__epgFail === 'function') window.__epgFail(err);
 });
