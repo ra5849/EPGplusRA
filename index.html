@@ -54,6 +54,11 @@
     // en navegadores que no pueden interpretar los módulos (o si un módulo falla),
     // casos en los que antes la página se quedaba en «Actualizando…» para siempre.
     window.__EPG_OK = false;
+    // ¿Este navegador entiende la sintaxis moderna del módulo (ES2020)? Si no,
+    // el script de la app ni siquiera llega a ejecutarse y antes no se veía nada.
+    window.__EPG_OLD = false;
+    try { new Function('var a = null ?? 1, b = null?.x; return a;'); }
+    catch (e) { window.__EPG_OLD = true; }
     window.__epgFail = function (err) {
       if (window.__EPG_OK) return;
       var app = document.getElementById('app');
@@ -66,7 +71,9 @@
       var h = document.createElement('h2');
       h.textContent = 'No se pudo cargar la guía';
       var p = document.createElement('p');
-      p.textContent = 'La app no ha terminado de arrancar. Puede ser la conexión, la caché del navegador o que el navegador sea demasiado antiguo.';
+      p.textContent = window.__EPG_OLD
+        ? 'Tu navegador no admite las funciones de JavaScript que necesita la app (ES2020). Actualízalo o usa Chrome, Edge, Firefox o Safari recientes.'
+        : 'La app no ha terminado de arrancar. Puede ser la conexión, la caché del navegador o que el navegador sea demasiado antiguo.';
       var detalle = document.createElement('p');
       detalle.className = 'muted small';
       detalle.textContent = err && err.message ? String(err.message) : '';
